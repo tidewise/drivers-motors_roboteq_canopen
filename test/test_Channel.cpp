@@ -118,6 +118,15 @@ TEST_P(DirectVelocityModes, it_reports_joint_effort_pwm_and_speed) {
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
 
+TEST_P(DirectVelocityModes, it_enables_all_ramps) {
+    vector<canbus::Message> messages = channel.sendDS402Transition(
+        ControlWord::ENABLE_OPERATION, true
+    );
+    uint8_t lsb = messages[0].data[4];
+    ASSERT_EQ((lsb >> 4) & 0x7, 0x7);
+}
+
+
 INSTANTIATE_TEST_CASE_P(
     ChannelTestDirectVelocityModes,
     DirectVelocityModes,
@@ -311,6 +320,22 @@ TEST_P(ProfileRelativePositionModes, it_reports_joint_effort_pwm_and_position) {
     ASSERT_FLOAT_EQ(0.62, state.position);
     ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
+}
+
+TEST_P(ProfileRelativePositionModes, it_controls_next_setpoint_immediately) {
+    vector<canbus::Message> messages = channel.sendDS402Transition(
+        ControlWord::ENABLE_OPERATION, true
+    );
+    uint8_t lsb = messages[0].data[4];
+    ASSERT_EQ((lsb >> 5) & 0x1, 0x1);
+}
+
+TEST_P(ProfileRelativePositionModes, it_uses_absolute_positions) {
+    vector<canbus::Message> messages = channel.sendDS402Transition(
+        ControlWord::ENABLE_OPERATION, true
+    );
+    uint8_t lsb = messages[0].data[4];
+    ASSERT_EQ((lsb >> 6) & 0x1, 0x0);
 }
 
 INSTANTIATE_TEST_CASE_P(

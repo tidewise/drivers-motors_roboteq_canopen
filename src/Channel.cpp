@@ -21,7 +21,9 @@ std::vector<canbus::Message> Channel::sendDS402Transition(
     ControlWord::Transition transition, bool enable_halt
 ) const {
     return vector<canbus::Message> {
-        queryDownloadRaw<ControlWordRaw>(ControlWord(transition, enable_halt).toRaw())
+        queryDownloadRaw<ControlWordRaw>(
+            ControlWord(m_operation_mode, transition, enable_halt).toRaw()
+        )
     };
 }
 

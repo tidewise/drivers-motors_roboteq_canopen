@@ -128,10 +128,12 @@ namespace motors_roboteq_canopen {
             FAULT_RESET
         };
 
-        ControlWord(Transition transition, bool enable_halt)
-            : transition(transition)
+        ControlWord(OperationModes mode, Transition transition, bool enable_halt)
+            : operation_mode(mode)
+            , transition(transition)
             , enable_halt(enable_halt) {}
 
+        OperationModes operation_mode;
         Transition transition;
         bool enable_halt;
 

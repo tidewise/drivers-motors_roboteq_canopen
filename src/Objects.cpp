@@ -29,6 +29,19 @@ uint16_t ControlWord::toRaw() const {
             break;
     }
 
+    switch(operation_mode) {
+        case OPERATION_MODE_POSITION_PROFILE:
+        case OPERATION_MODE_RELATIVE_POSITION_PROFILE:
+            word |= (1 << 5);
+            break;
+        case OPERATION_MODE_VELOCITY:
+        case OPERATION_MODE_VELOCITY_POSITION:
+            word |= 0x70; // enable all ramps
+            break;
+        default:
+            break;
+    }
+
     if (enable_halt)
         word |= 0x100;
 
