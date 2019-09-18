@@ -17,6 +17,24 @@ Channel::Channel(Driver& driver, int channel)
     }
 }
 
+std::vector<canbus::Message> Channel::sendDS402Transition(
+    ControlWord::Transition transition, bool enable_halt
+) const {
+    return vector<canbus::Message> {
+        queryDownloadRaw<ControlWordRaw>(ControlWord(transition, enable_halt).toRaw())
+    };
+}
+
+std::vector<canbus::Message> Channel::queryDS402Status() const {
+    return vector<canbus::Message> {
+        queryUpload<StatusWordRaw>()
+    };
+}
+
+StatusWord Channel::getDS402Status() const {
+    return StatusWord::fromRaw(getRaw<StatusWordRaw>());
+}
+
 void Channel::setFactors(Factors const& factors) {
     m_factors = factors;
 }
@@ -136,6 +154,11 @@ double Channel::validateField(JointState::MODE i, base::JointState const& cmd) {
 }
 
 template<typename T>
+T Channel::get() const {
+    return m_driver.get<T>(m_object_id_offset);
+}
+
+template<typename T>
 typename T::OBJECT_TYPE Channel::getRaw() const {
     return m_driver.getRaw<T>(m_object_id_offset);
 }
@@ -143,6 +166,11 @@ typename T::OBJECT_TYPE Channel::getRaw() const {
 template<typename T>
 void Channel::setRaw(typename T::OBJECT_TYPE value) {
     return m_driver.setRaw<T>(value, m_object_id_offset);
+}
+
+template<typename T>
+canbus::Message Channel::queryDownloadRaw(typename T::OBJECT_TYPE value) const {
+    return m_driver.queryDownloadRaw<T>(value, m_object_id_offset);
 }
 
 template<typename T>

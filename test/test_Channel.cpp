@@ -26,6 +26,34 @@ struct ChannelTestBase : public Helpers {
     }
 };
 
+TEST_F(ChannelTestBase, it_sends_a_ds402_transition_request) {
+    vector<canbus::Message> messages = channel.sendDS402Transition(
+        ControlWord::ENABLE_OPERATION, true
+    );
+    ASSERT_QUERIES_SDO_DOWNLOAD(
+        messages,
+        { 0x6840, 0 }
+    );
+
+    ASSERT_EQ(messages[0].data[4] & 0xF, 0xF);
+}
+
+TEST_F(ChannelTestBase, it_returns_the_ds402_status) {
+    can_open.set<uint16_t>(0x6841, 0, 1 << 11 | 1 << 7 | 0x27);
+    StatusWord status = channel.getDS402Status();
+    ASSERT_TRUE(status.warning);
+    ASSERT_TRUE(status.internal_limit_active);
+    ASSERT_EQ(StatusWord::OPERATION_ENABLED, status.state);
+}
+
+TEST_F(ChannelTestBase, it_queries_the_ds402_status) {
+    auto queries = channel.queryDS402Status();
+    ASSERT_QUERIES_SDO_UPLOAD(
+        queries,
+        { 0x6841, 0 }
+    );
+}
+
 struct DirectVelocityModes : public ChannelTestBase,
                              public testing::WithParamInterface<OperationModes> {
     DirectVelocityModes() {

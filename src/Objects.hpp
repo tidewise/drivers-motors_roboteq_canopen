@@ -23,8 +23,8 @@ namespace motors_roboteq_canopen {
 
     CANOPEN_DEFINE_OBJECT(0x2119, 0, Time,                          std::uint32_t);
 
-    CANOPEN_DEFINE_OBJECT(0x6040, 0, ControlWordRegister,           std::uint16_t);
-    CANOPEN_DEFINE_OBJECT(0x6041, 0, StatusWordRegister,            std::uint16_t);
+    CANOPEN_DEFINE_OBJECT(0x6040, 0, ControlWordRaw,                std::uint16_t);
+    CANOPEN_DEFINE_OBJECT(0x6041, 0, StatusWordRaw,                 std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x6042, 0, TargetVelocity,                std::int16_t);
     CANOPEN_DEFINE_OBJECT(0x6043, 0, ActualTargetVelocity,          std::int16_t);
     CANOPEN_DEFINE_OBJECT(0x6044, 0, ActualVelocity,                std::int16_t);
@@ -110,6 +110,76 @@ namespace motors_roboteq_canopen {
         UPDATE_JOINT_PWM      = 0x0008,
         UPDATE_JOINT_ALL      = 0x000F
     };
+
+    /** Representation of the control word
+     *
+     * The control word changes the drive's operational state
+     */
+    struct ControlWord
+    {
+        enum Transition
+        {
+            SHUTDOWN,
+            SWITCH_ON,
+            ENABLE_OPERATION,
+            DISABLE_VOLTAGE,
+            QUICK_STOP,
+            DISABLE_OPERATION,
+            FAULT_RESET
+        };
+
+        ControlWord(Transition transition, bool enable_halt)
+            : transition(transition)
+            , enable_halt(enable_halt) {}
+
+        Transition transition;
+        bool enable_halt;
+
+        ControlWordRaw::OBJECT_TYPE toRaw() const;
+    };
+
+    /** Representation of the status word
+     *
+     * The status word is the main representation of the drive's state
+     */
+    struct StatusWord
+    {
+        enum State
+        {
+            NOT_READY_TO_SWITCH_ON,
+            SWITCH_ON_DISABLED,
+            READY_TO_SWITCH_ON,
+            SWITCH_ON,
+            OPERATION_ENABLED,
+            QUICK_STOP_ACTIVE,
+            FAULT_REACTION_ACTIVE,
+            FAULT
+        };
+
+        struct UnknownState : public std::runtime_error
+        {
+            using std::runtime_error::runtime_error;
+        };
+
+        uint16_t raw;
+        State state;
+        bool voltage_enabled;
+        bool warning;
+        bool target_reached;
+        bool internal_limit_active;
+
+        StatusWord(uint16_t raw, State state, bool voltageEnabled, bool warning,
+                   bool targetReached, bool internalLimitActive)
+            : raw(raw)
+            , state(state)
+            , voltage_enabled(voltageEnabled)
+            , warning(warning)
+            , target_reached(targetReached)
+            , internal_limit_active(internalLimitActive) {}
+
+        static StatusWord fromRaw(StatusWordRaw::OBJECT_TYPE raw);
+    };
+
 }
 
 #endif

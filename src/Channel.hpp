@@ -35,15 +35,32 @@ namespace motors_roboteq_canopen {
         void setRaw(typename T::OBJECT_TYPE value);
 
         template<typename T>
+        T get() const;
+
+        template<typename T>
         typename T::OBJECT_TYPE getRaw() const;
 
         template<typename T>
         canbus::Message queryDownload() const;
 
         template<typename T>
+        canbus::Message queryDownloadRaw(typename T::OBJECT_TYPE value) const;
+
+        template<typename T>
         canbus::Message queryUpload() const;
 
     public:
+        /** Send a DS402 transition */
+        std::vector<canbus::Message> sendDS402Transition(
+            ControlWord::Transition transition, bool enable_halt
+        ) const;
+
+        /** Get the DS402 state machine status */
+        std::vector<canbus::Message> queryDS402Status() const;
+
+        /** Get the DS402 state machine status */
+        StatusWord getDS402Status() const;
+
         /** Set conversion factors for the given channel
          *
          * Conversion factors are used to convert from Roboteq's internal
