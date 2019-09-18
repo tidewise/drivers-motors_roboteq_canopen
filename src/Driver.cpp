@@ -35,17 +35,17 @@ vector<canbus::Message> Driver::queryControllerStatus() {
 
 ControllerStatus Driver::getControllerStatus() const {
     ControllerStatus status;
-    status.voltage_internal = static_cast<float>(getRaw<VoltageInternal>()) / 10;
-    status.voltage_battery = static_cast<float>(getRaw<VoltageBattery>()) / 10;
-    status.voltage_5v = static_cast<float>(getRaw<Voltage5V>()) / 1000;
-    status.temperature_mcu = Temperature::fromCelsius(getRaw<TemperatureMCU>());
+    status.voltage_internal = static_cast<float>(get<VoltageInternal>()) / 10;
+    status.voltage_battery = static_cast<float>(get<VoltageBattery>()) / 10;
+    status.voltage_5v = static_cast<float>(get<Voltage5V>()) / 1000;
+    status.temperature_mcu = Temperature::fromCelsius(get<TemperatureMCU>());
     for (size_t i = 0; i < m_channels.size(); ++i) {
         status.temperature_sensors.push_back(
-            Temperature::fromCelsius(getRaw<TemperatureSensor0>(0, i))
+            Temperature::fromCelsius(get<TemperatureSensor0>(0, i))
         );
     }
-    status.status_flags = getRaw<StatusFlagsRaw>();
-    status.fault_flags = getRaw<FaultFlagsRaw>();
+    status.status_flags = get<StatusFlagsRaw>();
+    status.fault_flags = get<FaultFlagsRaw>();
     return status;
 }
 

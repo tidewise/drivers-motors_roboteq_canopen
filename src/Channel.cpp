@@ -21,7 +21,7 @@ std::vector<canbus::Message> Channel::sendDS402Transition(
     ControlWord::Transition transition, bool enable_halt
 ) const {
     return vector<canbus::Message> {
-        queryDownloadRaw<ControlWordRaw>(
+        queryDownload<ControlWordRaw>(
             ControlWord(m_operation_mode, transition, enable_halt).toRaw()
         )
     };
@@ -34,7 +34,7 @@ std::vector<canbus::Message> Channel::queryDS402Status() const {
 }
 
 StatusWord Channel::getDS402Status() const {
-    return StatusWord::fromRaw(getRaw<StatusWordRaw>());
+    return StatusWord::fromRaw(get<StatusWordRaw>());
 }
 
 void Channel::setFactors(Factors const& factors) {
@@ -103,28 +103,28 @@ JointState Channel::getJointState() const {
     JointState state;
     if (m_operation_mode != OPERATION_MODE_TORQUE_PROFILE) {
         state.effort = m_factors.currentToTorqueSI(
-            m_driver.getRaw<MotorAmps>(0, m_channel)
+            m_driver.get<MotorAmps>(0, m_channel)
         );
     }
     state.raw = m_factors.pwmToFloat(
-        m_driver.getRaw<AppliedPowerLevel>(0, m_channel)
+        m_driver.get<AppliedPowerLevel>(0, m_channel)
     );
 
     switch(m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
         case OPERATION_MODE_VELOCITY_PROFILE:
-            state.speed = m_factors.velocityToSI(getRaw<ActualProfileVelocity>());
+            state.speed = m_factors.velocityToSI(get<ActualProfileVelocity>());
             return state;
         case OPERATION_MODE_VELOCITY_POSITION:
         case OPERATION_MODE_VELOCITY:
-            state.speed = m_factors.velocityToSI(getRaw<ActualVelocity>());
+            state.speed = m_factors.velocityToSI(get<ActualVelocity>());
             return state;
         case OPERATION_MODE_RELATIVE_POSITION_PROFILE:
         case OPERATION_MODE_RELATIVE_POSITION:
-            state.position = m_factors.relativePositionToSI(getRaw<Position>());
+            state.position = m_factors.relativePositionToSI(get<Position>());
             return state;
         case OPERATION_MODE_TORQUE_PROFILE: {
-            state.effort = m_factors.torqueToSI(getRaw<Torque>());
+            state.effort = m_factors.torqueToSI(get<Torque>());
             return state;
         }
         default:
@@ -136,7 +136,7 @@ vector<canbus::Message> Channel::queryOperationModeDownload(
     OperationModes mode
 ) {
     return vector<canbus::Message>{
-        m_driver.queryDownloadRaw<OperationMode>(mode, m_object_id_offset)
+        m_driver.queryDownload<OperationMode>(mode, m_object_id_offset)
     };
 }
 
@@ -156,23 +156,18 @@ double Channel::validateField(JointState::MODE i, base::JointState const& cmd) {
 }
 
 template<typename T>
-T Channel::get() const {
+typename T::OBJECT_TYPE Channel::get() const {
     return m_driver.get<T>(m_object_id_offset);
 }
 
 template<typename T>
-typename T::OBJECT_TYPE Channel::getRaw() const {
-    return m_driver.getRaw<T>(m_object_id_offset);
+void Channel::set(typename T::OBJECT_TYPE value) {
+    return m_driver.set<T>(value, m_object_id_offset);
 }
 
 template<typename T>
-void Channel::setRaw(typename T::OBJECT_TYPE value) {
-    return m_driver.setRaw<T>(value, m_object_id_offset);
-}
-
-template<typename T>
-canbus::Message Channel::queryDownloadRaw(typename T::OBJECT_TYPE value) const {
-    return m_driver.queryDownloadRaw<T>(value, m_object_id_offset);
+canbus::Message Channel::queryDownload(typename T::OBJECT_TYPE value) const {
+    return m_driver.queryDownload<T>(value, m_object_id_offset);
 }
 
 template<typename T>
@@ -182,8 +177,8 @@ canbus::Message Channel::queryUpload() const {
 
 template<typename T>
 canbus::Message Channel::queryDownload() const {
-    return m_driver.queryDownloadRaw<T>(m_driver.getRaw<T>(m_object_id_offset),
-                                        m_object_id_offset);
+    return m_driver.queryDownload<T>(m_driver.get<T>(m_object_id_offset),
+                                     m_object_id_offset);
 }
 
 vector<PDOMapping> Channel::getJointCommandRPDOMapping() const {
@@ -236,16 +231,16 @@ void Channel::setJointCommand(base::JointState const& cmd) {
             double effort = validateField(JointState::EFFORT, cmd);
             double velocity = validateField(JointState::SPEED, cmd);
 
-            setRaw<TargetTorque>(m_factors.torqueFromSI(effort));
-            setRaw<ProfileAcceleration>(acceleration_roboteq);
-            setRaw<ProfileDeceleration>(acceleration_roboteq);
-            setRaw<TargetProfileVelocity>(m_factors.velocityFromSI(velocity));
+            set<TargetTorque>(m_factors.torqueFromSI(effort));
+            set<ProfileAcceleration>(acceleration_roboteq);
+            set<ProfileDeceleration>(acceleration_roboteq);
+            set<TargetProfileVelocity>(m_factors.velocityFromSI(velocity));
             break;
         }
         case OPERATION_MODE_VELOCITY_POSITION:
         case OPERATION_MODE_VELOCITY: {
             double velocity = validateField(JointState::SPEED, cmd);
-            setRaw<TargetVelocity>(m_factors.velocityFromSI(velocity));
+            set<TargetVelocity>(m_factors.velocityFromSI(velocity));
             break;
         }
         case OPERATION_MODE_RELATIVE_POSITION_PROFILE: {
@@ -254,22 +249,22 @@ void Channel::setJointCommand(base::JointState const& cmd) {
             uint32_t acceleration_roboteq = m_factors.accelerationFromSI(acceleration);
             double position = validateField(JointState::POSITION, cmd);
 
-            setRaw<TargetPosition>(m_factors.relativePositionFromSI(position));
-            setRaw<ProfileVelocity>(m_factors.velocityFromSI(velocity));
-            setRaw<ProfileAcceleration>(acceleration_roboteq);
-            setRaw<ProfileDeceleration>(acceleration_roboteq);
+            set<TargetPosition>(m_factors.relativePositionFromSI(position));
+            set<ProfileVelocity>(m_factors.velocityFromSI(velocity));
+            set<ProfileAcceleration>(acceleration_roboteq);
+            set<ProfileDeceleration>(acceleration_roboteq);
             break;
         }
         case OPERATION_MODE_RELATIVE_POSITION: {
             double position = validateField(JointState::POSITION, cmd);
-            setRaw<TargetPosition>(m_factors.relativePositionFromSI(position));
+            set<TargetPosition>(m_factors.relativePositionFromSI(position));
             break;
         }
         case OPERATION_MODE_TORQUE_PROFILE: {
             double effort = validateField(JointState::EFFORT, cmd);
             double effort_slope = validateField(JointState::RAW, cmd);
-            setRaw<TargetTorque>(m_factors.torqueFromSI(effort));
-            setRaw<TorqueSlope>(m_factors.torqueSlopeFromSI(effort_slope));
+            set<TargetTorque>(m_factors.torqueFromSI(effort));
+            set<TorqueSlope>(m_factors.torqueSlopeFromSI(effort_slope));
             break;
         }
         default:

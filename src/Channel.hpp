@@ -32,19 +32,16 @@ namespace motors_roboteq_canopen {
         double validateField(base::JointState::MODE i, base::JointState const& cmd);
 
         template<typename T>
-        void setRaw(typename T::OBJECT_TYPE value);
+        void set(typename T::OBJECT_TYPE value);
 
         template<typename T>
-        T get() const;
-
-        template<typename T>
-        typename T::OBJECT_TYPE getRaw() const;
+        typename T::OBJECT_TYPE get() const;
 
         template<typename T>
         canbus::Message queryDownload() const;
 
         template<typename T>
-        canbus::Message queryDownloadRaw(typename T::OBJECT_TYPE value) const;
+        canbus::Message queryDownload(typename T::OBJECT_TYPE value) const;
 
         template<typename T>
         canbus::Message queryUpload() const;
