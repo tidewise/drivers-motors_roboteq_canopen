@@ -8,13 +8,13 @@ using namespace base;
 using namespace motors_roboteq_canopen;
 
 struct ChannelTestBase : public Helpers {
+    canopen_master::StateMachine can_open;
     Driver driver;
-    canopen_master::StateMachine& can_open;
     Channel& channel;
 
     ChannelTestBase()
-        : driver(2, 3)
-        , can_open(driver.getStateMachine())
+        : can_open(2)
+        , driver(can_open, 3)
         , channel(driver.getChannel(1)) {
 
         Factors factors;

@@ -6,8 +6,8 @@ using namespace base;
 using canopen_master::PDOMapping;
 using namespace motors_roboteq_canopen;
 
-Driver::Driver(int nodeId, int channel_count)
-    : canopen_master::Slave(nodeId) {
+Driver::Driver(canopen_master::StateMachine& state_machine, int channel_count)
+    : canopen_master::Slave(state_machine) {
 
     if (channel_count > MAX_CHANNEL_COUNT) {
         throw std::invalid_argument("this driver only supports up to 4 channels");

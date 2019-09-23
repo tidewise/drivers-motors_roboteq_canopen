@@ -23,7 +23,7 @@ namespace motors_roboteq_canopen {
             getJointStateTPDOParameters();
 
     public:
-        Driver(int nodeId, int channel_count);
+        Driver(canopen_master::StateMachine& state_machine, int channel_count);
 
         /** Return the SDO queries to update the controller status */
         std::vector<canbus::Message> queryControllerStatus();
