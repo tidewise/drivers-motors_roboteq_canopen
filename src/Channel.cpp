@@ -41,6 +41,36 @@ void Channel::setFactors(Factors const& factors) {
     m_factors = factors;
 }
 
+bool Channel::updateJointStateTracking(canopen_master::StateMachine::Update const& update) {
+    if (hasUpdatedObject<MotorAmps>(update)) {
+        m_joint_state_tracking |= UPDATED_MOTOR_AMPS;
+    }
+    else if (hasUpdatedObject<AppliedPowerLevel>(update)) {
+        m_joint_state_tracking |= UPDATED_POWER_LEVEL;
+    }
+    else if (hasUpdatedObject<ActualProfileVelocity>(update)) {
+        m_joint_state_tracking |= UPDATED_ACTUAL_PROFILE_VELOCITY;
+    }
+    else if (hasUpdatedObject<ActualVelocity>(update)) {
+        m_joint_state_tracking |= UPDATED_ACTUAL_VELOCITY;
+    }
+    else if (hasUpdatedObject<Position>(update)) {
+        m_joint_state_tracking |= UPDATED_POSITION;
+    }
+    else if (hasUpdatedObject<Torque>(update)) {
+        m_joint_state_tracking |= UPDATED_TORQUE;
+    }
+    return hasJointStateUpdate();
+}
+
+bool Channel::hasJointStateUpdate() const {
+    return (m_joint_state_tracking & m_joint_state_mask) == m_joint_state_mask;
+}
+
+void Channel::resetJointStateTracking() {
+    m_joint_state_tracking = 0;
+}
+
 vector<PDOMapping> Channel::getJointStateTPDOMapping() const {
     PDOMapping mapping;
     if (m_operation_mode != OPERATION_MODE_TORQUE_PROFILE) {
@@ -73,9 +103,9 @@ vector<PDOMapping> Channel::getJointStateTPDOMapping() const {
 vector<canbus::Message> Channel::queryJointState() const {
     vector<canbus::Message> messages;
     if (m_operation_mode != OPERATION_MODE_TORQUE_PROFILE) {
-        messages.push_back(m_driver.queryUpload<MotorAmps>(0, m_channel));
+        messages.push_back(queryUpload<MotorAmps>());
     }
-    messages.push_back(m_driver.queryUpload<AppliedPowerLevel>(0, m_channel));
+    messages.push_back(queryUpload<AppliedPowerLevel>());
 
     switch(m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
@@ -101,14 +131,14 @@ vector<canbus::Message> Channel::queryJointState() const {
 
 JointState Channel::getJointState() const {
     JointState state;
-    if (m_operation_mode != OPERATION_MODE_TORQUE_PROFILE) {
-        state.effort = m_factors.currentToTorqueSI(
-            m_driver.get<MotorAmps>(0, m_channel)
-        );
+    if (m_operation_mode == OPERATION_MODE_NONE) {
+        return state;
     }
-    state.raw = m_factors.pwmToFloat(
-        m_driver.get<AppliedPowerLevel>(0, m_channel)
-    );
+
+    if (m_operation_mode != OPERATION_MODE_TORQUE_PROFILE) {
+        state.effort = m_factors.currentToTorqueSI(get<MotorAmps>());
+    }
+    state.raw = m_factors.pwmToFloat(get<AppliedPowerLevel>());
 
     switch(m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
@@ -132,6 +162,34 @@ JointState Channel::getJointState() const {
     }
 }
 
+uint32_t Channel::getJointStateMask() const {
+    if (m_operation_mode == OPERATION_MODE_NONE) {
+        return 0;
+    }
+
+    uint32_t mask = UPDATED_POWER_LEVEL;
+    if (m_operation_mode != OPERATION_MODE_TORQUE_PROFILE) {
+        mask |= UPDATED_MOTOR_AMPS;
+    }
+
+    switch(m_operation_mode) {
+        case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
+        case OPERATION_MODE_VELOCITY_PROFILE:
+            return mask | UPDATED_ACTUAL_PROFILE_VELOCITY;
+        case OPERATION_MODE_VELOCITY_POSITION:
+        case OPERATION_MODE_VELOCITY:
+            return mask | UPDATED_ACTUAL_VELOCITY;
+        case OPERATION_MODE_RELATIVE_POSITION_PROFILE:
+        case OPERATION_MODE_RELATIVE_POSITION:
+            return mask | UPDATED_POSITION;
+        case OPERATION_MODE_TORQUE_PROFILE: {
+            return mask | UPDATED_TORQUE;
+        }
+        default:
+            throw invalid_argument("unsupported operation mode");
+    }
+}
+
 vector<canbus::Message> Channel::queryOperationModeDownload(
     OperationModes mode
 ) {
@@ -142,6 +200,8 @@ vector<canbus::Message> Channel::queryOperationModeDownload(
 
 void Channel::setOperationMode(OperationModes mode) {
     m_operation_mode = mode;
+    m_joint_state_tracking = 0;
+    m_joint_state_mask = getJointStateMask();
 }
 
 double Channel::validateField(JointState::MODE i, base::JointState const& cmd) {
@@ -155,30 +215,53 @@ double Channel::validateField(JointState::MODE i, base::JointState const& cmd) {
     return v;
 }
 
+template<typename T> std::pair<int, int> Channel::getObjectOffsets() const {
+    return std::make_pair(m_object_id_offset, 0);
+}
+
+template<> std::pair<int, int> Channel::getObjectOffsets<MotorAmps>() const {
+    return std::make_pair(0, m_channel);
+}
+
+template<> std::pair<int, int> Channel::getObjectOffsets<AppliedPowerLevel>() const {
+    return std::make_pair(0, m_channel);
+}
+
 template<typename T>
 typename T::OBJECT_TYPE Channel::get() const {
-    return m_driver.get<T>(m_object_id_offset);
+    auto offsets = getObjectOffsets<T>();
+    return m_driver.get<T>(offsets.first, offsets.second);
 }
 
 template<typename T>
 void Channel::set(typename T::OBJECT_TYPE value) {
-    return m_driver.set<T>(value, m_object_id_offset);
+    auto offsets = getObjectOffsets<T>();
+    return m_driver.set<T>(value, offsets.first, offsets.second);
 }
 
 template<typename T>
 canbus::Message Channel::queryDownload(typename T::OBJECT_TYPE value) const {
-    return m_driver.queryDownload<T>(value, m_object_id_offset);
+    auto offsets = getObjectOffsets<T>();
+    return m_driver.queryDownload<T>(value, offsets.first, offsets.second);
 }
 
 template<typename T>
 canbus::Message Channel::queryUpload() const {
-    return m_driver.queryUpload<T>(m_object_id_offset);
+    auto offsets = getObjectOffsets<T>();
+    return m_driver.queryUpload<T>(offsets.first, offsets.second);
 }
 
 template<typename T>
 canbus::Message Channel::queryDownload() const {
-    return m_driver.queryDownload<T>(m_driver.get<T>(m_object_id_offset),
-                                     m_object_id_offset);
+    auto offsets = getObjectOffsets<T>();
+    return m_driver.queryDownload<T>(m_driver.get<T>(offsets.first, offsets.second),
+                                     offsets.first, offsets.second);
+}
+
+template<typename T>
+bool Channel::hasUpdatedObject(canopen_master::StateMachine::Update const& update) const {
+    auto offsets = getObjectOffsets<T>();
+    return update.hasUpdatedObject<T>(offsets.first, offsets.second);
 }
 
 vector<PDOMapping> Channel::getJointCommandRPDOMapping() const {

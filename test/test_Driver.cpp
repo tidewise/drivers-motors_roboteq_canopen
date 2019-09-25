@@ -5,12 +5,15 @@
 using namespace motors_roboteq_canopen;
 
 struct DriverTest : public Helpers {
+    static const int NODE_ID = 2;
+    static const int CHANNEL_COUNT = 3;
+
     canopen_master::StateMachine can_open;
     Driver driver;
 
     DriverTest()
-        : can_open(2)
-        , driver(can_open, 3) {
+        : can_open(NODE_ID)
+        , driver(can_open, CHANNEL_COUNT) {
         Factors factors;
         factors.position_zero = 0.3;
         factors.position_min = -3;
@@ -19,6 +22,18 @@ struct DriverTest : public Helpers {
         driver.getChannel(0).setFactors(factors);
         driver.getChannel(1).setFactors(factors);
         driver.getChannel(2).setFactors(factors);
+    }
+
+    template<typename T>
+    canbus::Message make_sdo_ack(int channel_id) {
+        return Helpers::make_sdo_ack<T>(driver, NODE_ID, channel_id);
+    }
+
+    template<typename T>
+    void ASSERT_JOINT_STATE_UPDATE(bool channel0, bool channel1, bool channel2) {
+        return Helpers::ASSERT_JOINT_STATE_UPDATE<T>(
+            driver, NODE_ID, channel0, channel1, channel2
+        );
     }
 };
 
@@ -130,4 +145,17 @@ TEST_F(DriverTest, it_sets_up_status_TPDOs) {
             0x210F, 3, 1,
             0x210F, 4, 1 } }
     );
+}
+
+TEST_F(DriverTest, it_updates_the_channels_joint_state_tracking_on_process) {
+    driver.getChannel(0).setOperationMode(OPERATION_MODE_TORQUE_PROFILE);
+    driver.getChannel(1).setOperationMode(OPERATION_MODE_VELOCITY_PROFILE);
+    driver.getChannel(2).setOperationMode(OPERATION_MODE_RELATIVE_POSITION);
+
+    ASSERT_JOINT_STATE_UPDATE<MotorAmps>(false, false, false);
+    ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false, false, false);
+    ASSERT_JOINT_STATE_UPDATE<ActualProfileVelocity>(false, true, false);
+    ASSERT_JOINT_STATE_UPDATE<ActualVelocity>(false, true, false);
+    ASSERT_JOINT_STATE_UPDATE<Position>(false, true, true);
+    ASSERT_JOINT_STATE_UPDATE<Torque>(true, true, true);
 }

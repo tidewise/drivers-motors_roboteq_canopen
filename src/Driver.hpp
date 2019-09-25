@@ -12,8 +12,10 @@ namespace motors_roboteq_canopen {
      * Driver implementation for the CANOpen interface to Roboteq controllers
      */
     class Driver : public canopen_master::Slave {
+    public:
         static const int MAX_CHANNEL_COUNT = 4;
 
+    private:
         std::vector<Channel> m_channels;
 
         int m_joint_state_sync_period;
@@ -24,6 +26,10 @@ namespace motors_roboteq_canopen {
 
     public:
         Driver(canopen_master::StateMachine& state_machine, int channel_count);
+
+        canopen_master::StateMachine::Update process(
+            canbus::Message const& message
+        );
 
         /** Return the SDO queries to update the controller status */
         std::vector<canbus::Message> queryControllerStatus();
