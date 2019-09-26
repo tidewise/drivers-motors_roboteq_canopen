@@ -18,6 +18,14 @@ Driver::Driver(canopen_master::StateMachine& state_machine, int channel_count)
     }
 }
 
+canopen_master::StateMachine::Update Driver::process(canbus::Message const& message) {
+    auto update = canopen_master::Slave::process(message);
+    for (auto& c : m_channels) {
+        c.updateJointStateTracking(update);
+    }
+    return update;
+}
+
 vector<canbus::Message> Driver::queryControllerStatus() {
     vector<canbus::Message> queries{
         queryUpload<VoltageInternal>(),

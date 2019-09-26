@@ -5,6 +5,7 @@
 
 #include <base/JointState.hpp>
 #include <canopen_master/PDOMapping.hpp>
+#include <canopen_master/StateMachine.hpp>
 #include <motors_roboteq_canopen/Objects.hpp>
 #include <motors_roboteq_canopen/Factors.hpp>
 #include <motors_roboteq_canopen/Exceptions.hpp>
@@ -16,6 +17,14 @@ namespace motors_roboteq_canopen {
      * Control of a single controller channel
      */
     class Channel {
+    public:
+        /** Return the object id and sub-id needed to access the given dictionary object
+         * for this channel
+         */
+        template<typename T>
+        std::pair<int, int> getObjectOffsets() const;
+
+    private:
         friend class Driver;
 
         static const int CHANNEL_OBJECT_ID_OFFSET = 0x800;
@@ -45,6 +54,23 @@ namespace motors_roboteq_canopen {
 
         template<typename T>
         canbus::Message queryUpload() const;
+
+
+        template<typename T>
+        bool hasUpdatedObject(canopen_master::StateMachine::Update const& update) const;
+
+        enum JointStateTracking {
+            UPDATED_MOTOR_AMPS = 0x1,
+            UPDATED_POWER_LEVEL = 0x2,
+            UPDATED_ACTUAL_PROFILE_VELOCITY = 0x4,
+            UPDATED_ACTUAL_VELOCITY = 0x8,
+            UPDATED_POSITION = 0x10,
+            UPDATED_TORQUE = 0x20
+        };
+
+        uint8_t m_joint_state_tracking = 0;
+        uint8_t m_joint_state_mask = 0;
+        uint32_t getJointStateMask() const;
 
     public:
         /** Send a DS402 transition */
@@ -96,6 +122,25 @@ namespace motors_roboteq_canopen {
 
         /** Add the joint command object to the PDO mapping */
         std::vector<canopen_master::PDOMapping> getJointCommandRPDOMapping() const;
+
+        /** Track which fields of the JointState have been received
+         *
+         * @return true if all expected fields (given the operation mode) have been
+         *         received. Call resetJointStateTracking() to reset the flag
+         * @see hasJointStateUpdate
+         */
+        bool updateJointStateTracking(canopen_master::StateMachine::Update const& update);
+
+        /** Whether all fields necessary for getJointState have been updated since
+         * the last call to resetJointStateTracking
+         *
+         * This assumes that you call updateJointStateTracking with the update
+         * call
+         */
+        bool hasJointStateUpdate() const;
+
+        /** Reset the internal tracking state of updateJointStateTracking */
+        void resetJointStateTracking();
     };
 }
 

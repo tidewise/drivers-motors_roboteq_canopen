@@ -7,15 +7,22 @@ using namespace std;
 using namespace base;
 using namespace motors_roboteq_canopen;
 
+typedef canopen_master::StateMachine StateMachine;
+typedef canopen_master::StateMachine::Update Update;
+
 struct ChannelTestBase : public Helpers {
+    static const int NODE_ID = 2;
+    static const int CHANNEL_COUNT = 3;
+    static const int CHANNEL_ID = 1;
+
     canopen_master::StateMachine can_open;
     Driver driver;
     Channel& channel;
 
     ChannelTestBase()
-        : can_open(2)
-        , driver(can_open, 3)
-        , channel(driver.getChannel(1)) {
+        : can_open(NODE_ID)
+        , driver(can_open, CHANNEL_COUNT)
+        , channel(driver.getChannel(CHANNEL_ID)) {
 
         Factors factors;
         factors.position_zero = 0.3;
@@ -23,6 +30,16 @@ struct ChannelTestBase : public Helpers {
         factors.position_max = 4;
         factors.torque_constant = 0.3;
         channel.setFactors(factors);
+    }
+
+    template<typename T>
+    void ASSERT_JOINT_STATE_UPDATE(bool state) {
+        Update update;
+        update.mode = StateMachine::PROCESSED_SDO_INITIATE_DOWNLOAD;
+        auto offsets = driver.getChannel(CHANNEL_ID).getObjectOffsets<T>();
+        update.addUpdate<T>(offsets.first, offsets.second);
+        channel.updateJointStateTracking(update);
+        return Helpers::ASSERT_JOINT_STATE_UPDATE<T>(driver, NODE_ID, true, state, true);
     }
 };
 
@@ -52,6 +69,23 @@ TEST_F(ChannelTestBase, it_queries_the_ds402_status) {
         queries,
         { 0x6841, 0 }
     );
+}
+
+TEST_F(ChannelTestBase, it_reports_having_a_joint_state_update) {
+    ASSERT_TRUE(channel.hasJointStateUpdate());
+    ASSERT_JOINT_STATE_UPDATE<MotorAmps>(true);
+    ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(true);
+    ASSERT_JOINT_STATE_UPDATE<Position>(true);
+    channel.resetJointStateTracking();
+    ASSERT_TRUE(channel.hasJointStateUpdate());
+}
+
+TEST_F(ChannelTestBase, it_returns_a_unknown_joint_state) {
+    auto state = channel.getJointState();
+    ASSERT_TRUE(base::isUnknown(state.position));
+    ASSERT_TRUE(base::isUnknown(state.speed));
+    ASSERT_TRUE(base::isUnknown(state.effort));
+    ASSERT_TRUE(base::isUnknown(state.raw));
 }
 
 struct DirectVelocityModes : public ChannelTestBase,
@@ -116,6 +150,14 @@ TEST_P(DirectVelocityModes, it_reports_joint_effort_pwm_and_speed) {
     ASSERT_FLOAT_EQ(5 * 2 * M_PI / 60, state.speed);
     ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
+}
+
+TEST_P(DirectVelocityModes, it_tracks_joint_state_updates) {
+    ASSERT_JOINT_STATE_UPDATE<MotorAmps>(false);
+    ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false);
+    ASSERT_JOINT_STATE_UPDATE<ActualVelocity>(true);
+    channel.resetJointStateTracking();
+    ASSERT_FALSE(channel.hasJointStateUpdate());
 }
 
 TEST_P(DirectVelocityModes, it_enables_all_ramps) {
@@ -222,6 +264,14 @@ TEST_P(ProfileVelocityModes, it_reports_joint_effort_pwm_and_speed) {
     ASSERT_FLOAT_EQ(5 * 2 * M_PI / 60, state.speed);
     ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
+}
+
+TEST_P(ProfileVelocityModes, it_tracks_joint_state_updates) {
+    ASSERT_JOINT_STATE_UPDATE<MotorAmps>(false);
+    ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false);
+    ASSERT_JOINT_STATE_UPDATE<ActualProfileVelocity>(true);
+    channel.resetJointStateTracking();
+    ASSERT_FALSE(channel.hasJointStateUpdate());
 }
 
 INSTANTIATE_TEST_CASE_P(
@@ -338,6 +388,14 @@ TEST_P(ProfileRelativePositionModes, it_uses_absolute_positions) {
     ASSERT_EQ((lsb >> 6) & 0x1, 0x0);
 }
 
+TEST_P(ProfileRelativePositionModes, it_tracks_joint_state_updates) {
+    ASSERT_JOINT_STATE_UPDATE<MotorAmps>(false);
+    ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false);
+    ASSERT_JOINT_STATE_UPDATE<Position>(true);
+    channel.resetJointStateTracking();
+    ASSERT_FALSE(channel.hasJointStateUpdate());
+}
+
 INSTANTIATE_TEST_CASE_P(
     ChannelTestProfileRelativePositionModes,
     ProfileRelativePositionModes,
@@ -411,6 +469,14 @@ TEST_P(DirectRelativePositionModes, it_reports_joint_effort_pwm_and_position) {
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
 
+TEST_P(DirectRelativePositionModes, it_tracks_joint_state_updates) {
+    ASSERT_JOINT_STATE_UPDATE<MotorAmps>(false);
+    ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false);
+    ASSERT_JOINT_STATE_UPDATE<Position>(true);
+    channel.resetJointStateTracking();
+    ASSERT_FALSE(channel.hasJointStateUpdate());
+}
+
 INSTANTIATE_TEST_CASE_P(
     ChannelTestDirectRelativePositionModes,
     DirectRelativePositionModes,
@@ -482,6 +548,13 @@ TEST_P(ProfileTorqueModes, it_reports_joint_effort_and_pwm) {
     auto state = channel.getJointState();
     ASSERT_FLOAT_EQ(1.2, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
+}
+
+TEST_P(ProfileTorqueModes, it_tracks_joint_state_updates) {
+    ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false);
+    ASSERT_JOINT_STATE_UPDATE<Torque>(true);
+    channel.resetJointStateTracking();
+    ASSERT_FALSE(channel.hasJointStateUpdate());
 }
 
 INSTANTIATE_TEST_CASE_P(
