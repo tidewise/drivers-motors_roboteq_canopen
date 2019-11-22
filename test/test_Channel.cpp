@@ -25,7 +25,10 @@ struct ChannelTestBase : public Helpers {
         , channel(driver.getChannel(CHANNEL_ID)) {
 
         Factors factors;
-        factors.position_zero = 0.3;
+        factors.speed_zero = -50;
+        factors.speed_min = -1;
+        factors.speed_max = 2.5;
+        factors.position_zero = 100;
         factors.position_min = -3;
         factors.position_max = 4;
         factors.torque_constant = 0.3;
@@ -133,8 +136,8 @@ TEST_P(DirectVelocityModes, it_creates_a_RPDO_mappings) {
 
 TEST_P(DirectVelocityModes, it_writes_the_target_velocity) {
     channel.setJointCommand(JointState::Speed(-0.5));
-    int16_t rpm = can_open.get<int16_t>(0x6842, 0);
-    ASSERT_EQ(rpm, static_cast<int>(-0.5 / (2 * M_PI) * 60));
+    int16_t v = can_open.get<int16_t>(0x6842, 0);
+    ASSERT_EQ(v, -525);
 }
 
 TEST_P(DirectVelocityModes, it_throws_if_the_speed_field_is_not_set) {
@@ -147,7 +150,7 @@ TEST_P(DirectVelocityModes, it_reports_joint_effort_pwm_and_speed) {
     can_open.set<int16_t>(0x2100, 2, 12);
     can_open.set<int16_t>(0x2102, 2, 400);
     auto state = channel.getJointState();
-    ASSERT_FLOAT_EQ(5 * 2 * M_PI / 60, state.speed);
+    ASSERT_NEAR(0.13, state.speed, 1e-3);
     ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
@@ -240,14 +243,14 @@ TEST_P(ProfileVelocityModes, it_creates_a_RPDO_mappings) {
 
 TEST_P(ProfileVelocityModes, it_writes_the_target_velocity_and_desired_accelerations_and_efforts) {
     channel.setJointCommand(cmd);
-    int32_t rpm = can_open.get<int32_t>(0x68ff, 0);
+    int32_t speed = can_open.get<int32_t>(0x68ff, 0);
     int16_t torque = can_open.get<int16_t>(0x6871, 0);
     int16_t acceleration = can_open.get<uint32_t>(0x6883, 0);
     int16_t deceleration = can_open.get<uint32_t>(0x6884, 0);
-    ASSERT_EQ(rpm, static_cast<int>(0.5 / (2 * M_PI) * 60));
-    ASSERT_EQ(torque, static_cast<int>(42));
-    ASSERT_EQ(acceleration, static_cast<int>(0.3 / (2 * M_PI) * 60 * 10));
-    ASSERT_EQ(deceleration, static_cast<int>(0.3 / (2 * M_PI) * 60 * 10));
+    ASSERT_EQ(speed, 160);
+    ASSERT_EQ(torque, 42);
+    ASSERT_EQ(acceleration, 76);
+    ASSERT_EQ(deceleration, 76);
 }
 
 TEST_P(ProfileVelocityModes, it_throws_if_the_speed_field_is_not_set) {
@@ -270,7 +273,7 @@ TEST_P(ProfileVelocityModes, it_reports_joint_effort_pwm_and_speed) {
     can_open.set<int16_t>(0x2100, 2, 12);
     can_open.set<int16_t>(0x2102, 2, 400);
     auto state = channel.getJointState();
-    ASSERT_FLOAT_EQ(5 * 2 * M_PI / 60, state.speed);
+    ASSERT_NEAR(0.13, state.speed, 1e-3);
     ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
@@ -350,10 +353,10 @@ TEST_P(ProfileRelativePositionModes, it_writes_the_target_position_and_desired_v
     int32_t rpm = can_open.get<int32_t>(0x6881, 0);
     int16_t acceleration = can_open.get<uint32_t>(0x6883, 0);
     int16_t deceleration = can_open.get<uint32_t>(0x6884, 0);
-    ASSERT_EQ(position, -485);
-    ASSERT_EQ(rpm, static_cast<int>(0.5 / (2 * M_PI) * 60));
-    ASSERT_EQ(acceleration, static_cast<int>(0.3 / (2 * M_PI) * 60 * 10));
-    ASSERT_EQ(deceleration, static_cast<int>(0.3 / (2 * M_PI) * 60 * 10));
+    ASSERT_EQ(position, 167);
+    ASSERT_EQ(rpm, 160);
+    ASSERT_EQ(acceleration, 76);
+    ASSERT_EQ(deceleration, 76);
 }
 
 TEST_P(ProfileRelativePositionModes, it_throws_if_the_speed_field_is_not_set) {
@@ -376,7 +379,7 @@ TEST_P(ProfileRelativePositionModes, it_reports_joint_effort_pwm_and_position) {
     can_open.set<int16_t>(0x2100, 2, 12);
     can_open.set<int16_t>(0x2102, 2, 400);
     auto state = channel.getJointState();
-    ASSERT_FLOAT_EQ(0.62, state.position);
+    ASSERT_NEAR(0.0888, state.position, 1e-4);
     ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
@@ -460,7 +463,7 @@ TEST_P(DirectRelativePositionModes, it_creates_a_RPDO_mappings) {
 TEST_P(DirectRelativePositionModes, it_writes_the_target_position) {
     channel.setJointCommand(cmd);
     int32_t position = can_open.get<int32_t>(0x687a, 0);
-    ASSERT_EQ(position, -485);
+    ASSERT_EQ(position, 167);
 }
 
 TEST_P(DirectRelativePositionModes, it_throws_if_the_position_field_is_not_set) {
@@ -473,7 +476,7 @@ TEST_P(DirectRelativePositionModes, it_reports_joint_effort_pwm_and_position) {
     can_open.set<int16_t>(0x2100, 2, 12);
     can_open.set<int16_t>(0x2102, 2, 400);
     auto state = channel.getJointState();
-    ASSERT_FLOAT_EQ(0.62, state.position);
+    ASSERT_NEAR(0.088888, state.position, 1e-4);
     ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }

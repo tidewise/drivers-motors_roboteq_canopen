@@ -78,7 +78,7 @@ vector<PDOMapping> Channel::getJointStateTPDOMapping() const {
     }
     mapping.add<AppliedPowerLevel>(0, m_channel);
 
-    switch(m_operation_mode) {
+    switch (m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
         case OPERATION_MODE_VELOCITY_PROFILE:
             mapping.add<ActualProfileVelocity>(m_object_id_offset);
@@ -107,7 +107,7 @@ vector<canbus::Message> Channel::queryJointState() const {
     }
     messages.push_back(queryUpload<AppliedPowerLevel>());
 
-    switch(m_operation_mode) {
+    switch (m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
         case OPERATION_MODE_VELOCITY_PROFILE:
             messages.push_back(queryUpload<ActualProfileVelocity>());
@@ -140,18 +140,18 @@ JointState Channel::getJointState() const {
     }
     state.raw = m_factors.pwmToFloat(get<AppliedPowerLevel>());
 
-    switch(m_operation_mode) {
+    switch (m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
         case OPERATION_MODE_VELOCITY_PROFILE:
-            state.speed = m_factors.velocityToSI(get<ActualProfileVelocity>());
+            state.speed = m_factors.speedToSI(get<ActualProfileVelocity>());
             return state;
         case OPERATION_MODE_VELOCITY_POSITION:
         case OPERATION_MODE_VELOCITY:
-            state.speed = m_factors.velocityToSI(get<ActualVelocity>());
+            state.speed = m_factors.speedToSI(get<ActualVelocity>());
             return state;
         case OPERATION_MODE_RELATIVE_POSITION_PROFILE:
         case OPERATION_MODE_RELATIVE_POSITION:
-            state.position = m_factors.relativePositionToSI(get<Position>());
+            state.position = m_factors.positionToSI(get<Position>());
             return state;
         case OPERATION_MODE_TORQUE_PROFILE: {
             state.effort = m_factors.torqueToSI(get<Torque>());
@@ -172,7 +172,7 @@ uint32_t Channel::getJointStateMask() const {
         mask |= UPDATED_MOTOR_AMPS;
     }
 
-    switch(m_operation_mode) {
+    switch (m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
         case OPERATION_MODE_VELOCITY_PROFILE:
             return mask | UPDATED_ACTUAL_PROFILE_VELOCITY;
@@ -272,7 +272,7 @@ vector<PDOMapping> Channel::getJointCommandRPDOMapping() const {
     vector<PDOMapping> mappings;
     mappings.push_back(PDOMapping());
 
-    switch(m_operation_mode) {
+    switch (m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
         case OPERATION_MODE_VELOCITY_PROFILE: {
             mappings.back().add<TargetTorque>(m_object_id_offset);
@@ -314,7 +314,7 @@ base::JointState Channel::getJointCommand() const {
 }
 
 void Channel::setJointCommand(base::JointState const& cmd) {
-    switch(m_operation_mode) {
+    switch (m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
         case OPERATION_MODE_VELOCITY_PROFILE: {
             double acceleration = validateField(JointState::ACCELERATION, cmd);
@@ -325,13 +325,13 @@ void Channel::setJointCommand(base::JointState const& cmd) {
             set<TargetTorque>(m_factors.torqueFromSI(effort));
             set<ProfileAcceleration>(acceleration_roboteq);
             set<ProfileDeceleration>(acceleration_roboteq);
-            set<TargetProfileVelocity>(m_factors.velocityFromSI(velocity));
+            set<TargetProfileVelocity>(m_factors.speedFromSI(velocity));
             break;
         }
         case OPERATION_MODE_VELOCITY_POSITION:
         case OPERATION_MODE_VELOCITY: {
             double velocity = validateField(JointState::SPEED, cmd);
-            set<TargetVelocity>(m_factors.velocityFromSI(velocity));
+            set<TargetVelocity>(m_factors.speedFromSI(velocity));
             break;
         }
         case OPERATION_MODE_RELATIVE_POSITION_PROFILE: {
@@ -340,15 +340,15 @@ void Channel::setJointCommand(base::JointState const& cmd) {
             uint32_t acceleration_roboteq = m_factors.accelerationFromSI(acceleration);
             double position = validateField(JointState::POSITION, cmd);
 
-            set<TargetPosition>(m_factors.relativePositionFromSI(position));
-            set<ProfileVelocity>(m_factors.velocityFromSI(velocity));
+            set<TargetPosition>(m_factors.positionFromSI(position));
+            set<ProfileVelocity>(m_factors.speedFromSI(velocity));
             set<ProfileAcceleration>(acceleration_roboteq);
             set<ProfileDeceleration>(acceleration_roboteq);
             break;
         }
         case OPERATION_MODE_RELATIVE_POSITION: {
             double position = validateField(JointState::POSITION, cmd);
-            set<TargetPosition>(m_factors.relativePositionFromSI(position));
+            set<TargetPosition>(m_factors.positionFromSI(position));
             break;
         }
         case OPERATION_MODE_TORQUE_PROFILE: {
