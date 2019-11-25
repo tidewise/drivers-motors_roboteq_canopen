@@ -22,6 +22,9 @@ namespace motors_roboteq_canopen {
         int m_joint_state_sync_period;
         base::Time m_joint_state_period;
 
+        int m_rpdo_begin = 0;
+        int m_rpdo_end = 0;
+
         canopen_master::PDOCommunicationParameters
             getJointStateTPDOParameters();
 
@@ -70,6 +73,13 @@ namespace motors_roboteq_canopen {
 
         /** Get the last set joint command */
         base::samples::Joints getJointCommand() const;
+
+        /** Generate the RPDO messages to be sent on the bus to
+         * apply the last set command
+         *
+         * @see setupJointCommandRPDOs setJointCommand
+         */
+        std::vector<canbus::Message> getRPDOMessages() const;
     };
 }
 

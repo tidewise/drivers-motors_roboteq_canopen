@@ -96,6 +96,8 @@ int Driver::setupJointCommandRPDOs(std::vector<canbus::Message>& messages,
             messages.insert(messages.end(), msgs.begin(), msgs.end());
         }
     }
+    m_rpdo_begin = pdoStartIndex;
+    m_rpdo_end = pdoIndex;
     return pdoIndex;
 }
 
@@ -127,6 +129,7 @@ int Driver::setupStatusTPDOs(std::vector<canbus::Message>& messages,
     }
     return pdoIndex + 2;
 }
+
 void Driver::setJointCommand(base::samples::Joints const& command) {
     size_t i = 0;
     for (auto& channel : m_channels) {
@@ -156,5 +159,13 @@ base::samples::Joints Driver::getJointCommand() const {
         command.elements.push_back(channel.getJointCommand());
     }
     return command;
+}
+
+std::vector<canbus::Message> Driver::getRPDOMessages() const {
+    std::vector<canbus::Message> messages;
+    for (int i = m_rpdo_begin; i != m_rpdo_end; ++i) {
+        messages.push_back(mCANOpen.getRPDOMessage(i));
+    }
+    return messages;
 }
 
