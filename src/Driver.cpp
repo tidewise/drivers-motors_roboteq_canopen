@@ -127,3 +127,34 @@ int Driver::setupStatusTPDOs(std::vector<canbus::Message>& messages,
     }
     return pdoIndex + 2;
 }
+void Driver::setJointCommand(base::samples::Joints const& command) {
+    size_t i = 0;
+    for (auto& channel : m_channels) {
+        if (channel.getOperationMode() == OPERATION_MODE_NONE) {
+            continue;
+        }
+        else if (command.elements.size() <= i) {
+            throw std::invalid_argument("too few elements in joint command");
+        }
+
+        channel.setJointCommand(command.elements[i]);
+        ++i;
+    }
+    if (i != command.elements.size()) {
+        throw std::invalid_argument("too many elements in joint command");
+    }
+}
+
+base::samples::Joints Driver::getJointCommand() const {
+    base::samples::Joints command;
+
+    for (auto& channel : m_channels) {
+        if (channel.getOperationMode() == OPERATION_MODE_NONE) {
+            continue;
+        }
+
+        command.elements.push_back(channel.getJointCommand());
+    }
+    return command;
+}
+

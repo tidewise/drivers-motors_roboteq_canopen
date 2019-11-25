@@ -6,6 +6,7 @@
 #include <motors_roboteq_canopen/ControllerStatus.hpp>
 #include <motors_roboteq_canopen/Channel.hpp>
 #include <base/JointState.hpp>
+#include <base/samples/Joints.hpp>
 
 namespace motors_roboteq_canopen {
     /**
@@ -62,6 +63,13 @@ namespace motors_roboteq_canopen {
             std::vector<canbus::Message>& messages, int pdoStartIndex,
             canopen_master::PDOCommunicationParameters const& parameters
         );
+
+        /** Update the object dictionary to reflect the given command
+         */
+        void setJointCommand(base::samples::Joints const& command);
+
+        /** Get the last set joint command */
+        base::samples::Joints getJointCommand() const;
     };
 }
 

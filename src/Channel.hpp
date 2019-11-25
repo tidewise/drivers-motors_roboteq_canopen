@@ -35,6 +35,7 @@ namespace motors_roboteq_canopen {
 
         Factors m_factors;
         OperationModes m_operation_mode = OPERATION_MODE_NONE;
+        base::JointState m_current_command;
         bool m_command_fields[base::JointState::UNSET];
 
         Channel(Driver& driver, int channel);
@@ -113,8 +114,16 @@ namespace motors_roboteq_canopen {
          */
         void setOperationMode(OperationModes mode);
 
+        /**
+         * Return the channel's operation mode
+         */
+        OperationModes getOperationMode() const;
+
         /** Set command objects in the object dictionary */
         void setJointCommand(base::JointState const& cmd);
+
+        /** Returns the last joint command set */
+        base::JointState getJointCommand() const;
 
         /** Return the SDO messages that would update the current command
          */

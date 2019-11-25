@@ -204,6 +204,10 @@ void Channel::setOperationMode(OperationModes mode) {
     m_joint_state_mask = getJointStateMask();
 }
 
+OperationModes Channel::getOperationMode() const {
+    return m_operation_mode;
+}
+
 double Channel::validateField(JointState::MODE i, base::JointState const& cmd) {
     double v = cmd.getField(i);
     if (base::isUnknown(v)) {
@@ -305,6 +309,10 @@ vector<PDOMapping> Channel::getJointCommandRPDOMapping() const {
     }
 }
 
+base::JointState Channel::getJointCommand() const {
+    return m_current_command;
+}
+
 void Channel::setJointCommand(base::JointState const& cmd) {
     switch(m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
@@ -353,6 +361,8 @@ void Channel::setJointCommand(base::JointState const& cmd) {
         default:
             throw invalid_argument("unsupported operation mode");
     }
+
+    m_current_command = cmd;
 }
 
 vector<canbus::Message> Channel::queryJointCommandDownload() const {
