@@ -16,6 +16,10 @@ Driver::Driver(canopen_master::StateMachine& state_machine, int channel_count)
     for (int i = 0; i < channel_count; ++i) {
         m_channels.push_back(Channel(*this, i));
     }
+
+    state_machine.setQuirks(
+        canopen_master::StateMachine::PDO_COBID_MESSAGE_RESERVED_BIT_QUIRK
+    );
 }
 
 canopen_master::StateMachine::Update Driver::process(canbus::Message const& message) {
