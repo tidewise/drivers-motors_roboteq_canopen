@@ -152,6 +152,15 @@ TEST_P(DirectVelocityModes, it_reports_joint_effort_pwm_and_speed) {
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
 
+TEST_P(DirectVelocityModes, it_handle_multiple_updates_at_the_same_time) {
+    driver.process(make_sdo_ack<MotorAmps>(driver, NODE_ID, CHANNEL_ID));
+    driver.process(make_sdo_ack<AppliedPowerLevel>(driver, NODE_ID, CHANNEL_ID));
+    driver.process(make_sdo_ack<ActualVelocity>(driver, NODE_ID, CHANNEL_ID));
+    ASSERT_TRUE(channel.hasJointStateUpdate());
+    channel.resetJointStateTracking();
+    ASSERT_FALSE(channel.hasJointStateUpdate());
+}
+
 TEST_P(DirectVelocityModes, it_tracks_joint_state_updates) {
     ASSERT_JOINT_STATE_UPDATE<MotorAmps>(false);
     ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false);

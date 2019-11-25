@@ -45,19 +45,19 @@ bool Channel::updateJointStateTracking(canopen_master::StateMachine::Update cons
     if (hasUpdatedObject<MotorAmps>(update)) {
         m_joint_state_tracking |= UPDATED_MOTOR_AMPS;
     }
-    else if (hasUpdatedObject<AppliedPowerLevel>(update)) {
+    if (hasUpdatedObject<AppliedPowerLevel>(update)) {
         m_joint_state_tracking |= UPDATED_POWER_LEVEL;
     }
-    else if (hasUpdatedObject<ActualProfileVelocity>(update)) {
+    if (hasUpdatedObject<ActualProfileVelocity>(update)) {
         m_joint_state_tracking |= UPDATED_ACTUAL_PROFILE_VELOCITY;
     }
-    else if (hasUpdatedObject<ActualVelocity>(update)) {
+    if (hasUpdatedObject<ActualVelocity>(update)) {
         m_joint_state_tracking |= UPDATED_ACTUAL_VELOCITY;
     }
-    else if (hasUpdatedObject<Position>(update)) {
+    if (hasUpdatedObject<Position>(update)) {
         m_joint_state_tracking |= UPDATED_POSITION;
     }
-    else if (hasUpdatedObject<Torque>(update)) {
+    if (hasUpdatedObject<Torque>(update)) {
         m_joint_state_tracking |= UPDATED_TORQUE;
     }
     return hasJointStateUpdate();
