@@ -73,9 +73,7 @@ void Channel::resetJointStateTracking() {
 
 vector<PDOMapping> Channel::getJointStateTPDOMapping() const {
     PDOMapping mapping;
-    if (m_operation_mode != OPERATION_MODE_TORQUE_PROFILE) {
-        mapping.add<MotorAmps>(0, m_channel);
-    }
+    mapping.add<MotorAmps>(0, m_channel);
     mapping.add<AppliedPowerLevel>(0, m_channel);
 
     switch (m_operation_mode) {
@@ -92,7 +90,6 @@ vector<PDOMapping> Channel::getJointStateTPDOMapping() const {
             mapping.add<Position>(m_object_id_offset);
             return vector<PDOMapping> { mapping };
         case OPERATION_MODE_TORQUE_PROFILE: {
-            mapping.add<Torque>(m_object_id_offset);
             return vector<PDOMapping> { mapping };
         }
         default:
@@ -102,9 +99,7 @@ vector<PDOMapping> Channel::getJointStateTPDOMapping() const {
 
 vector<canbus::Message> Channel::queryJointState() const {
     vector<canbus::Message> messages;
-    if (m_operation_mode != OPERATION_MODE_TORQUE_PROFILE) {
-        messages.push_back(queryUpload<MotorAmps>());
-    }
+    messages.push_back(queryUpload<MotorAmps>());
     messages.push_back(queryUpload<AppliedPowerLevel>());
 
     switch (m_operation_mode) {
@@ -121,7 +116,6 @@ vector<canbus::Message> Channel::queryJointState() const {
             messages.push_back(queryUpload<Position>());
             return messages;
         case OPERATION_MODE_TORQUE_PROFILE: {
-            messages.push_back(queryUpload<Torque>());
             return messages;
         }
         default:
@@ -135,9 +129,7 @@ JointState Channel::getJointState() const {
         return state;
     }
 
-    if (m_operation_mode != OPERATION_MODE_TORQUE_PROFILE) {
-        state.effort = m_factors.currentToTorqueSI(get<MotorAmps>());
-    }
+    state.effort = m_factors.currentToTorqueSI(get<MotorAmps>());
     state.raw = m_factors.pwmToFloat(get<AppliedPowerLevel>());
 
     switch (m_operation_mode) {
@@ -168,9 +160,7 @@ uint32_t Channel::getJointStateMask() const {
     }
 
     uint32_t mask = UPDATED_POWER_LEVEL;
-    if (m_operation_mode != OPERATION_MODE_TORQUE_PROFILE) {
-        mask |= UPDATED_MOTOR_AMPS;
-    }
+    mask |= UPDATED_MOTOR_AMPS;
 
     switch (m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
@@ -183,7 +173,7 @@ uint32_t Channel::getJointStateMask() const {
         case OPERATION_MODE_RELATIVE_POSITION:
             return mask | UPDATED_POSITION;
         case OPERATION_MODE_TORQUE_PROFILE: {
-            return mask | UPDATED_TORQUE;
+            return mask;
         }
         default:
             throw invalid_argument("unsupported operation mode");

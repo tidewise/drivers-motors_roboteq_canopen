@@ -248,9 +248,9 @@ TEST_P(ProfileVelocityModes, it_writes_the_target_velocity_and_desired_accelerat
     int16_t acceleration = can_open.get<uint32_t>(0x6883, 0);
     int16_t deceleration = can_open.get<uint32_t>(0x6884, 0);
     ASSERT_EQ(speed, 160);
-    ASSERT_EQ(torque, 42);
     ASSERT_EQ(acceleration, 76);
     ASSERT_EQ(deceleration, 76);
+    ASSERT_EQ(torque, 12);
 }
 
 TEST_P(ProfileVelocityModes, it_throws_if_the_speed_field_is_not_set) {
@@ -270,11 +270,11 @@ TEST_P(ProfileVelocityModes, it_throws_if_the_effort_field_is_not_set) {
 
 TEST_P(ProfileVelocityModes, it_reports_joint_effort_pwm_and_speed) {
     can_open.set<int32_t>(0x686C, 0, 5);
-    can_open.set<int16_t>(0x2100, 2, 12);
+    can_open.set<int16_t>(0x2100, 2, 12); // A
     can_open.set<int16_t>(0x2102, 2, 400);
     auto state = channel.getJointState();
     ASSERT_NEAR(0.13, state.speed, 1e-3);
-    ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
+    ASSERT_FLOAT_EQ(1.2 / 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
 
@@ -380,7 +380,7 @@ TEST_P(ProfileRelativePositionModes, it_reports_joint_effort_pwm_and_position) {
     can_open.set<int16_t>(0x2102, 2, 400);
     auto state = channel.getJointState();
     ASSERT_NEAR(0.0888, state.position, 1e-4);
-    ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
+    ASSERT_FLOAT_EQ(1.2 / 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
 
@@ -477,7 +477,7 @@ TEST_P(DirectRelativePositionModes, it_reports_joint_effort_pwm_and_position) {
     can_open.set<int16_t>(0x2102, 2, 400);
     auto state = channel.getJointState();
     ASSERT_NEAR(0.088888, state.position, 1e-4);
-    ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
+    ASSERT_FLOAT_EQ(1.2 / 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
 
@@ -509,7 +509,7 @@ struct ProfileTorqueModes : public testing::WithParamInterface<OperationModes>,
 TEST_P(ProfileTorqueModes, it_queries_the_necessary_fields) {
     auto queries = channel.queryJointState();
     ASSERT_QUERIES_SDO_UPLOAD(queries,
-        { 0x6877, 0,
+        { 0x2100, 2,
           0x2102, 2 }
     );
 }
@@ -518,8 +518,8 @@ TEST_P(ProfileTorqueModes, it_creates_a_TPDO_mappings) {
     auto queries = channel.getJointStateTPDOMapping();
     ASSERT_PDO_MAPPINGS(
         queries,
-        { { 0x2102, 2, 2,
-            0x6877, 0, 2 } });
+        { { 0x2100, 2, 2,
+            0x2102, 2, 2 } });
 }
 
 TEST_P(ProfileTorqueModes, it_sets_the_necessary_fields) {
@@ -545,8 +545,8 @@ TEST_P(ProfileTorqueModes, it_writes_the_target_torque_and_torque_slope) {
     channel.setJointCommand(cmd);
     int16_t torque = can_open.get<int16_t>(0x6871, 0);
     uint32_t torque_slope = can_open.get<uint32_t>(0x6887, 0);
-    ASSERT_EQ(torque, 30);
-    ASSERT_EQ(torque_slope, 5000);
+    ASSERT_EQ(torque, 9);
+    ASSERT_EQ(torque_slope, 1500);
 }
 
 TEST_P(ProfileTorqueModes, it_throws_if_the_torque_field_is_not_set) {
@@ -555,16 +555,16 @@ TEST_P(ProfileTorqueModes, it_throws_if_the_torque_field_is_not_set) {
 }
 
 TEST_P(ProfileTorqueModes, it_reports_joint_effort_and_pwm) {
-    can_open.set<int16_t>(0x6877, 0, 120);
+    can_open.set<int16_t>(0x2100, 2, 120);
     can_open.set<int16_t>(0x2102, 2, 400);
     auto state = channel.getJointState();
-    ASSERT_FLOAT_EQ(1.2, state.effort);
+    ASSERT_FLOAT_EQ(12/0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
 
 TEST_P(ProfileTorqueModes, it_tracks_joint_state_updates) {
     ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false);
-    ASSERT_JOINT_STATE_UPDATE<Torque>(true);
+    ASSERT_JOINT_STATE_UPDATE<MotorAmps>(true);
     channel.resetJointStateTracking();
     ASSERT_FALSE(channel.hasJointStateUpdate());
 }

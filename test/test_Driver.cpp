@@ -148,16 +148,21 @@ TEST_F(DriverTest, it_sets_up_status_TPDOs) {
 }
 
 TEST_F(DriverTest, it_updates_the_channels_joint_state_tracking_on_process) {
+<<<<<<< HEAD:test/test_Driver.cpp
     driver.getChannel(0).setOperationMode(OPERATION_MODE_TORQUE_PROFILE);
     driver.getChannel(1).setOperationMode(OPERATION_MODE_VELOCITY_PROFILE);
     driver.getChannel(2).setOperationMode(OPERATION_MODE_RELATIVE_POSITION);
+=======
+    driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_VELOCITY_PROFILE);
+    driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
+    driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
+>>>>>>> a921265... TEMP: torque:test/test_DS402Driver.cpp
 
     ASSERT_JOINT_STATE_UPDATE<MotorAmps>(false, false, false);
-    ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false, false, false);
-    ASSERT_JOINT_STATE_UPDATE<ActualProfileVelocity>(false, true, false);
-    ASSERT_JOINT_STATE_UPDATE<ActualVelocity>(false, true, false);
-    ASSERT_JOINT_STATE_UPDATE<Position>(false, true, true);
-    ASSERT_JOINT_STATE_UPDATE<Torque>(true, true, true);
+    ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false, true, false);
+    ASSERT_JOINT_STATE_UPDATE<ActualProfileVelocity>(true, true, false);
+    ASSERT_JOINT_STATE_UPDATE<ActualVelocity>(true, true, false);
+    ASSERT_JOINT_STATE_UPDATE<Position>(true, true, true);
 }
 
 base::samples::Joints getJointCommand() {
