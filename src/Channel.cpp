@@ -83,6 +83,8 @@ vector<PDOMapping> Channel::getJointStateTPDOMapping() const {
             return vector<PDOMapping> { mapping };
         case OPERATION_MODE_VELOCITY_POSITION:
         case OPERATION_MODE_VELOCITY:
+        case OPERATION_MODE_ANALOG_POSITION:
+        case OPERATION_MODE_ANALOG_VELOCITY:
             mapping.add<ActualVelocity>(m_object_id_offset);
             return vector<PDOMapping> { mapping };
         case OPERATION_MODE_RELATIVE_POSITION_PROFILE:
@@ -109,6 +111,8 @@ vector<canbus::Message> Channel::queryJointState() const {
             return messages;
         case OPERATION_MODE_VELOCITY_POSITION:
         case OPERATION_MODE_VELOCITY:
+        case OPERATION_MODE_ANALOG_POSITION:
+        case OPERATION_MODE_ANALOG_VELOCITY:
             messages.push_back(queryUpload<ActualVelocity>());
             return messages;
         case OPERATION_MODE_RELATIVE_POSITION_PROFILE:
@@ -135,18 +139,23 @@ JointState Channel::getJointState() const {
     switch (m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
         case OPERATION_MODE_VELOCITY_PROFILE:
-            state.speed = m_factors.speedToSI(get<ActualProfileVelocity>());
+            state.speed = m_factors.rpmToSI(get<ActualProfileVelocity>());
             return state;
         case OPERATION_MODE_VELOCITY_POSITION:
         case OPERATION_MODE_VELOCITY:
-            state.speed = m_factors.speedToSI(get<ActualVelocity>());
+            state.speed = m_factors.rpmToSI(get<ActualVelocity>());
+            return state;
+        case OPERATION_MODE_ANALOG_VELOCITY:
+            state.speed = m_factors.relativeSpeedToSI(get<ActualVelocity>());
+            return state;
+        case OPERATION_MODE_ANALOG_POSITION:
+            state.position = m_factors.relativePositionToSI(get<ActualVelocity>());
             return state;
         case OPERATION_MODE_RELATIVE_POSITION_PROFILE:
         case OPERATION_MODE_RELATIVE_POSITION:
-            state.position = m_factors.positionToSI(get<Position>());
+            state.position = m_factors.relativePositionToSI(get<Position>());
             return state;
         case OPERATION_MODE_TORQUE_PROFILE: {
-            state.effort = m_factors.torqueToSI(get<Torque>());
             return state;
         }
         default:
@@ -168,6 +177,8 @@ uint32_t Channel::getJointStateMask() const {
             return mask | UPDATED_ACTUAL_PROFILE_VELOCITY;
         case OPERATION_MODE_VELOCITY_POSITION:
         case OPERATION_MODE_VELOCITY:
+        case OPERATION_MODE_ANALOG_POSITION:
+        case OPERATION_MODE_ANALOG_VELOCITY:
             return mask | UPDATED_ACTUAL_VELOCITY;
         case OPERATION_MODE_RELATIVE_POSITION_PROFILE:
         case OPERATION_MODE_RELATIVE_POSITION:
@@ -183,8 +194,14 @@ uint32_t Channel::getJointStateMask() const {
 vector<canbus::Message> Channel::queryOperationModeDownload(
     OperationModes mode
 ) {
+    int roboteq_mode = mode;
+    if (mode == OPERATION_MODE_ANALOG_POSITION ||
+        mode == OPERATION_MODE_ANALOG_VELOCITY) {
+        roboteq_mode = OPERATION_MODE_VELOCITY;
+    }
+
     return vector<canbus::Message>{
-        m_driver.queryDownload<OperationMode>(mode, m_object_id_offset)
+        m_driver.queryDownload<OperationMode>(roboteq_mode, m_object_id_offset)
     };
 }
 
@@ -214,6 +231,10 @@ template<typename T> std::pair<int, int> Channel::getObjectOffsets() const {
 }
 
 template<> std::pair<int, int> Channel::getObjectOffsets<MotorAmps>() const {
+    return std::make_pair(0, m_channel);
+}
+
+template<> std::pair<int, int> Channel::getObjectOffsets<SetSpeedTarget>() const {
     return std::make_pair(0, m_channel);
 }
 
@@ -273,6 +294,8 @@ vector<PDOMapping> Channel::getJointCommandRPDOMapping() const {
             return mappings;
         }
         case OPERATION_MODE_VELOCITY_POSITION:
+        case OPERATION_MODE_ANALOG_POSITION:
+        case OPERATION_MODE_ANALOG_VELOCITY:
         case OPERATION_MODE_VELOCITY: {
             mappings.back().add<TargetVelocity>(m_object_id_offset);
             return mappings;
@@ -308,44 +331,54 @@ void Channel::setJointCommand(base::JointState const& cmd) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
         case OPERATION_MODE_VELOCITY_PROFILE: {
             double acceleration = validateField(JointState::ACCELERATION, cmd);
-            uint32_t acceleration_roboteq = m_factors.accelerationFromSI(acceleration);
+            uint32_t acceleration_roboteq = m_factors.rpmFromSI(acceleration) * 10;
             double effort = validateField(JointState::EFFORT, cmd);
             double velocity = validateField(JointState::SPEED, cmd);
 
-            set<TargetTorque>(m_factors.torqueFromSI(effort));
+            set<TargetTorque>(m_factors.currentFromTorqueSI(effort));
             set<ProfileAcceleration>(acceleration_roboteq);
             set<ProfileDeceleration>(acceleration_roboteq);
-            set<TargetProfileVelocity>(m_factors.speedFromSI(velocity));
+            set<TargetProfileVelocity>(m_factors.rpmFromSI(velocity));
             break;
         }
         case OPERATION_MODE_VELOCITY_POSITION:
         case OPERATION_MODE_VELOCITY: {
             double velocity = validateField(JointState::SPEED, cmd);
-            set<TargetVelocity>(m_factors.speedFromSI(velocity));
+            set<TargetVelocity>(m_factors.rpmFromSI(velocity));
+            break;
+        }
+        case OPERATION_MODE_ANALOG_VELOCITY: {
+            double velocity = validateField(JointState::SPEED, cmd);
+            set<TargetVelocity>(m_factors.relativeSpeedFromSI(velocity));
+            break;
+        }
+        case OPERATION_MODE_ANALOG_POSITION: {
+            double position = validateField(JointState::POSITION, cmd);
+            set<TargetVelocity>(m_factors.relativePositionFromSI(position));
             break;
         }
         case OPERATION_MODE_RELATIVE_POSITION_PROFILE: {
             double velocity = validateField(JointState::SPEED, cmd);
             double acceleration = validateField(JointState::ACCELERATION, cmd);
-            uint32_t acceleration_roboteq = m_factors.accelerationFromSI(acceleration);
+            uint32_t acceleration_roboteq = m_factors.rpmFromSI(acceleration) * 10;
             double position = validateField(JointState::POSITION, cmd);
 
-            set<TargetPosition>(m_factors.positionFromSI(position));
-            set<ProfileVelocity>(m_factors.speedFromSI(velocity));
+            set<TargetPosition>(m_factors.relativePositionFromSI(position));
+            set<ProfileVelocity>(m_factors.rpmFromSI(velocity));
             set<ProfileAcceleration>(acceleration_roboteq);
             set<ProfileDeceleration>(acceleration_roboteq);
             break;
         }
         case OPERATION_MODE_RELATIVE_POSITION: {
             double position = validateField(JointState::POSITION, cmd);
-            set<TargetPosition>(m_factors.positionFromSI(position));
+            set<TargetPosition>(m_factors.relativePositionFromSI(position));
             break;
         }
         case OPERATION_MODE_TORQUE_PROFILE: {
             double effort = validateField(JointState::EFFORT, cmd);
             double effort_slope = validateField(JointState::RAW, cmd);
-            set<TargetTorque>(m_factors.torqueFromSI(effort));
-            set<TorqueSlope>(m_factors.torqueSlopeFromSI(effort_slope));
+            set<TargetTorque>(m_factors.currentFromTorqueSI(effort));
+            set<TorqueSlope>(m_factors.currentSlopeFromTorqueSlopeSI(effort_slope));
             break;
         }
         default:
@@ -356,7 +389,7 @@ void Channel::setJointCommand(base::JointState const& cmd) {
 }
 
 vector<canbus::Message> Channel::queryJointCommandDownload() const {
-    switch(m_operation_mode) {
+    switch (m_operation_mode) {
         case OPERATION_MODE_VELOCITY_POSITION_PROFILE:
         case OPERATION_MODE_VELOCITY_PROFILE:
             return vector<canbus::Message> {
@@ -367,6 +400,11 @@ vector<canbus::Message> Channel::queryJointCommandDownload() const {
             };
         case OPERATION_MODE_VELOCITY_POSITION:
         case OPERATION_MODE_VELOCITY:
+            return vector<canbus::Message> {
+                queryDownload<TargetVelocity>()
+            };
+        case OPERATION_MODE_ANALOG_POSITION:
+        case OPERATION_MODE_ANALOG_VELOCITY:
             return vector<canbus::Message> {
                 queryDownload<TargetVelocity>()
             };

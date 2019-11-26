@@ -97,6 +97,10 @@ struct DirectVelocityModes : public ChannelTestBase,
         channel.setOperationMode(GetParam());
     }
 };
+struct DirectVelocityModesNotAnalog : public DirectVelocityModes {
+};
+struct DirectVelocityModesAnalog : public DirectVelocityModes {
+};
 
 TEST_P(DirectVelocityModes, it_queries_the_necessary_fields) {
     auto queries = channel.queryJointState();
@@ -134,25 +138,9 @@ TEST_P(DirectVelocityModes, it_creates_a_RPDO_mappings) {
     );
 }
 
-TEST_P(DirectVelocityModes, it_writes_the_target_velocity) {
-    channel.setJointCommand(JointState::Speed(-0.5));
-    int16_t v = can_open.get<int16_t>(0x6842, 0);
-    ASSERT_EQ(v, -525);
-}
-
 TEST_P(DirectVelocityModes, it_throws_if_the_speed_field_is_not_set) {
     ASSERT_THROW(channel.setJointCommand(JointState::Position(-0.5)),
                  InvalidJointCommand);
-}
-
-TEST_P(DirectVelocityModes, it_reports_joint_effort_pwm_and_speed) {
-    can_open.set<int16_t>(0x6844, 0, 5);
-    can_open.set<int16_t>(0x2100, 2, 12);
-    can_open.set<int16_t>(0x2102, 2, 400);
-    auto state = channel.getJointState();
-    ASSERT_NEAR(0.13, state.speed, 1e-3);
-    ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
-    ASSERT_FLOAT_EQ(0.4, state.raw);
 }
 
 TEST_P(DirectVelocityModes, it_handle_multiple_updates_at_the_same_time) {
@@ -180,11 +168,49 @@ TEST_P(DirectVelocityModes, it_enables_all_ramps) {
     ASSERT_EQ((lsb >> 4) & 0x7, 0x7);
 }
 
+TEST_P(DirectVelocityModesNotAnalog, it_writes_the_target_velocity) {
+    channel.setJointCommand(JointState::Speed(-0.5));
+    int16_t v = can_open.get<int16_t>(0x6842, 0);
+    ASSERT_EQ(v, -5);
+}
+
+TEST_P(DirectVelocityModesNotAnalog, it_reports_joint_effort_pwm_and_speed) {
+    can_open.set<int16_t>(0x6844, 0, 5);
+    can_open.set<int16_t>(0x2100, 2, 12);
+    can_open.set<int16_t>(0x2102, 2, 400);
+    auto state = channel.getJointState();
+    ASSERT_NEAR(0.5236, state.speed, 1e-3);
+    ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
+    ASSERT_FLOAT_EQ(0.4, state.raw);
+}
+
+TEST_P(DirectVelocityModesAnalog, it_writes_the_target_velocity) {
+    channel.setJointCommand(JointState::Speed(-0.5));
+    int16_t v = can_open.get<int16_t>(0x6842, 0);
+    ASSERT_EQ(v, -525);
+}
+
+TEST_P(DirectVelocityModesAnalog, it_reports_joint_effort_pwm_and_speed) {
+    can_open.set<int16_t>(0x6844, 0, 5);
+    can_open.set<int16_t>(0x2100, 2, 12);
+    can_open.set<int16_t>(0x2102, 2, 400);
+    auto state = channel.getJointState();
+    ASSERT_NEAR(0.13, state.speed, 1e-3);
+    ASSERT_FLOAT_EQ(1.2 * 0.3, state.effort);
+    ASSERT_FLOAT_EQ(0.4, state.raw);
+}
 
 INSTANTIATE_TEST_CASE_P(
-    ChannelTestDirectVelocityModes,
+    ChannelTestDirectVelocityModesNotAnalog,
     DirectVelocityModes,
-    testing::Values(OPERATION_MODE_VELOCITY, OPERATION_MODE_VELOCITY_POSITION)
+    testing::Values(OPERATION_MODE_VELOCITY,
+                    OPERATION_MODE_VELOCITY_POSITION)
+);
+
+INSTANTIATE_TEST_CASE_P(
+    ChannelTestDirectVelocityModesAnalog,
+    DirectVelocityModes,
+    testing::Values(OPERATION_MODE_ANALOG_VELOCITY)
 );
 
 struct ProfileVelocityModes : public testing::WithParamInterface<OperationModes>,
@@ -247,10 +273,10 @@ TEST_P(ProfileVelocityModes, it_writes_the_target_velocity_and_desired_accelerat
     int16_t torque = can_open.get<int16_t>(0x6871, 0);
     int16_t acceleration = can_open.get<uint32_t>(0x6883, 0);
     int16_t deceleration = can_open.get<uint32_t>(0x6884, 0);
-    ASSERT_EQ(speed, 160);
-    ASSERT_EQ(acceleration, 76);
-    ASSERT_EQ(deceleration, 76);
+    ASSERT_EQ(speed, 4);
     ASSERT_EQ(torque, 12);
+    ASSERT_EQ(acceleration, 28);
+    ASSERT_EQ(deceleration, 28);
 }
 
 TEST_P(ProfileVelocityModes, it_throws_if_the_speed_field_is_not_set) {
@@ -273,7 +299,7 @@ TEST_P(ProfileVelocityModes, it_reports_joint_effort_pwm_and_speed) {
     can_open.set<int16_t>(0x2100, 2, 12); // A
     can_open.set<int16_t>(0x2102, 2, 400);
     auto state = channel.getJointState();
-    ASSERT_NEAR(0.13, state.speed, 1e-3);
+    ASSERT_NEAR(0.5236, state.speed, 1e-3);
     ASSERT_FLOAT_EQ(1.2 / 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
@@ -354,9 +380,9 @@ TEST_P(ProfileRelativePositionModes, it_writes_the_target_position_and_desired_v
     int16_t acceleration = can_open.get<uint32_t>(0x6883, 0);
     int16_t deceleration = can_open.get<uint32_t>(0x6884, 0);
     ASSERT_EQ(position, 167);
-    ASSERT_EQ(rpm, 160);
-    ASSERT_EQ(acceleration, 76);
-    ASSERT_EQ(deceleration, 76);
+    ASSERT_EQ(rpm, 4);
+    ASSERT_EQ(acceleration, 28);
+    ASSERT_EQ(deceleration, 28);
 }
 
 TEST_P(ProfileRelativePositionModes, it_throws_if_the_speed_field_is_not_set) {

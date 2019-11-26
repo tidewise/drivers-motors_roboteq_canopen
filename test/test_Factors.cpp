@@ -16,52 +16,52 @@ struct FactorsTest : public ::testing::Test {
 };
 
 TEST_F(FactorsTest, it_returns_SI_zero_at_speed_zero) {
-    ASSERT_FLOAT_EQ(0, factors.speedToSI(100));
+    ASSERT_FLOAT_EQ(0, factors.relativeSpeedToSI(100));
 }
 
 TEST_F(FactorsTest, it_returns_SI_speed_min_at_relative_speed_minus_1000) {
-    ASSERT_FLOAT_EQ(-10, factors.speedToSI(-1000));
+    ASSERT_FLOAT_EQ(-10, factors.relativeSpeedToSI(-1000));
 }
 
 TEST_F(FactorsTest, it_returns_SI_speed_max_at_relative_speed_1000) {
-    ASSERT_FLOAT_EQ(42, factors.speedToSI(1000));
+    ASSERT_FLOAT_EQ(42, factors.relativeSpeedToSI(1000));
 }
 
 TEST_F(FactorsTest, it_returns_speed_zero_at_SI_zero) {
-    ASSERT_FLOAT_EQ(100, factors.speedFromSI(0));
+    ASSERT_FLOAT_EQ(100, factors.relativeSpeedFromSI(0));
 }
 
 TEST_F(FactorsTest, it_returns_speed_minus_1000_at_SI_speed_min) {
-    ASSERT_FLOAT_EQ(-1000, factors.speedFromSI(-10));
+    ASSERT_FLOAT_EQ(-1000, factors.relativeSpeedFromSI(-10));
 }
 
 TEST_F(FactorsTest, it_returns_speed_1000_at_SI_speed_max) {
-    ASSERT_FLOAT_EQ(1000, factors.speedFromSI(42));
+    ASSERT_FLOAT_EQ(1000, factors.relativeSpeedFromSI(42));
 }
 
 
 
 
 TEST_F(FactorsTest, it_returns_SI_zero_at_position_zero) {
-    ASSERT_FLOAT_EQ(0, factors.positionToSI(250));
+    ASSERT_FLOAT_EQ(0, factors.relativePositionToSI(250));
 }
 
 TEST_F(FactorsTest, it_returns_SI_position_min_at_relative_position_minus_1000) {
-    ASSERT_FLOAT_EQ(-100, factors.positionToSI(-1000));
+    ASSERT_FLOAT_EQ(-100, factors.relativePositionToSI(-1000));
 }
 
 TEST_F(FactorsTest, it_returns_SI_position_max_at_relative_position_1000) {
-    ASSERT_FLOAT_EQ(84, factors.positionToSI(1000));
+    ASSERT_FLOAT_EQ(84, factors.relativePositionToSI(1000));
 }
 
 TEST_F(FactorsTest, it_returns_position_zero_at_SI_zero) {
-    ASSERT_FLOAT_EQ(250, factors.positionFromSI(0));
+    ASSERT_FLOAT_EQ(250, factors.relativePositionFromSI(0));
 }
 
 TEST_F(FactorsTest, it_returns_position_minus_1000_at_SI_position_min) {
-    ASSERT_FLOAT_EQ(-1000, factors.positionFromSI(-100));
+    ASSERT_FLOAT_EQ(-1000, factors.relativePositionFromSI(-100));
 }
 
 TEST_F(FactorsTest, it_returns_position_1000_at_SI_position_max) {
-    ASSERT_FLOAT_EQ(1000, factors.positionFromSI(84));
+    ASSERT_FLOAT_EQ(1000, factors.relativePositionFromSI(84));
 }

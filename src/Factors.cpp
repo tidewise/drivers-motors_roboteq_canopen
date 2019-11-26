@@ -21,41 +21,42 @@ static int32_t fromSI(float si, float max, int32_t zero, float min) {
     }
 }
 
-float Factors::positionToSI(int32_t position) const {
+float Factors::relativePositionToSI(int32_t position) const {
     return toSI(position, position_max, position_zero, position_min);
 }
 
-int32_t Factors::positionFromSI(float position) const {
+int32_t Factors::relativePositionFromSI(float position) const {
     return fromSI(position, position_max, position_zero, position_min);
 }
 
-float Factors::speedToSI(int32_t speed) const {
+float Factors::relativeSpeedToSI(int32_t speed) const {
     return toSI(speed, speed_max, speed_zero, speed_min);
 }
 
-int32_t Factors::speedFromSI(float speed) const {
+int32_t Factors::relativeSpeedFromSI(float speed) const {
     return fromSI(speed, speed_max, speed_zero, speed_min);
 }
 
-float Factors::torqueToSI(int16_t value) const {
-    return static_cast<float>(value) / 100;
+float Factors::rpmToSI(float speed) const {
+    return speed * 2 * M_PI / 60;
 }
 
-float Factors::currentToTorqueSI(int16_t value) const {
-    return static_cast<float>(value) / 10 * torque_constant;
+float Factors::rpmFromSI(float speed) const {
+    return speed / (2 * M_PI) * 60;
 }
 
 float Factors::pwmToFloat(int16_t value) const {
     return static_cast<float>(value) / 1000;
 }
 
-int32_t Factors::accelerationFromSI(float value) const {
-    return speedFromSI(value);
+float Factors::currentToTorqueSI(int16_t value) const {
+    return static_cast<float>(value) / 10.0 / torque_constant;
 }
 
-int16_t Factors::torqueFromSI(float value) const {
-    return value * 100;
+int16_t Factors::currentFromTorqueSI(float value) const {
+    return value * torque_constant * 100;
 }
-int16_t Factors::torqueSlopeFromSI(float value) const {
-    return value * 10 * 1000;
+
+int16_t Factors::currentSlopeFromTorqueSlopeSI(float value) const {
+    return value * torque_constant * 10000;
 }

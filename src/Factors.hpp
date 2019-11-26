@@ -30,17 +30,23 @@ namespace motors_roboteq_canopen {
         /** Torque constant in A/Nm */
         double torque_constant = 1;
 
-        float speedToSI(int32_t position) const;
-        float positionToSI(int32_t position) const;
-        float torqueToSI(int16_t value) const;
-        float currentToTorqueSI(int16_t value) const;
+        float relativeSpeedToSI(int32_t position) const;
+        float relativePositionToSI(int32_t position) const;
         float pwmToFloat(int16_t value) const;
 
-        int32_t positionFromSI(float position) const;
-        int32_t speedFromSI(float value) const;
-        int32_t accelerationFromSI(float value) const;
-        int16_t torqueFromSI(float value) const;
-        int16_t torqueSlopeFromSI(float value) const;
+        int32_t relativePositionFromSI(float position) const;
+        int32_t relativeSpeedFromSI(float value) const;
+        float rpmFromSI(float speed) const;
+        float rpmToSI(float speed) const;
+
+        /** Torque from current in A * 10 */
+        float currentToTorqueSI(int16_t value) const;
+
+        /** Current A * 100 from torque */
+        int16_t currentFromTorqueSI(float value) const;
+
+        /** Current slope in A * 1e4 / seconds from torque slope */
+        int16_t currentSlopeFromTorqueSlopeSI(float value) const;
     };
 }
 

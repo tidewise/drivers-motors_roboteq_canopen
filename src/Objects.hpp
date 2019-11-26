@@ -4,6 +4,7 @@
 #include <canopen_master/Objects.hpp>
 
 namespace motors_roboteq_canopen {
+    CANOPEN_DEFINE_OBJECT(0x2002, 1, SetSpeedTarget,                std::int16_t);
     CANOPEN_DEFINE_OBJECT(0x200C, 0, EmergencyShutdown,             std::uint8_t);
     CANOPEN_DEFINE_OBJECT(0x200D, 0, ReleaseShutdown,               std::uint8_t);
     CANOPEN_DEFINE_OBJECT(0x200E, 0, Stop,                          std::uint8_t);
@@ -100,7 +101,13 @@ namespace motors_roboteq_canopen {
 
         /** Direct PID control on torque with ramps
          */
-        OPERATION_MODE_TORQUE_PROFILE = 4
+        OPERATION_MODE_TORQUE_PROFILE = 4,
+
+        /** Direct PID control on position for feedback based on analog inputs */
+        OPERATION_MODE_ANALOG_POSITION = 10,
+
+        /** Direct PID control on velocity for feedback based on analog inputs */
+        OPERATION_MODE_ANALOG_VELOCITY = 11
     };
 
     enum Updates {
