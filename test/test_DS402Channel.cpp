@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 #include "Helpers.hpp"
-#include <motors_roboteq_canopen/Driver.hpp>
-#include <motors_roboteq_canopen/Channel.hpp>
+#include <motors_roboteq_canopen/DS402Driver.hpp>
+#include <motors_roboteq_canopen/DS402Channel.hpp>
 
 using namespace std;
 using namespace base;
@@ -16,8 +16,8 @@ struct ChannelTestBase : public Helpers {
     static const int CHANNEL_ID = 1;
 
     canopen_master::StateMachine can_open;
-    Driver driver;
-    Channel& channel;
+    DS402Driver driver;
+    DS402Channel& channel;
 
     ChannelTestBase()
         : can_open(NODE_ID)
@@ -92,7 +92,7 @@ TEST_F(ChannelTestBase, it_returns_a_unknown_joint_state) {
 }
 
 struct DirectVelocityModes : public ChannelTestBase,
-                             public testing::WithParamInterface<OperationModes> {
+                             public testing::WithParamInterface<DS402OperationModes> {
     DirectVelocityModes() {
         channel.setOperationMode(GetParam());
     }
@@ -203,17 +203,17 @@ TEST_P(DirectVelocityModesAnalog, it_reports_joint_effort_pwm_and_speed) {
 INSTANTIATE_TEST_CASE_P(
     ChannelTestDirectVelocityModesNotAnalog,
     DirectVelocityModes,
-    testing::Values(OPERATION_MODE_VELOCITY,
-                    OPERATION_MODE_VELOCITY_POSITION)
+    testing::Values(DS402_OPERATION_MODE_VELOCITY,
+                    DS402_OPERATION_MODE_VELOCITY_POSITION)
 );
 
 INSTANTIATE_TEST_CASE_P(
     ChannelTestDirectVelocityModesAnalog,
     DirectVelocityModes,
-    testing::Values(OPERATION_MODE_ANALOG_VELOCITY)
+    testing::Values(DS402_OPERATION_MODE_ANALOG_VELOCITY)
 );
 
-struct ProfileVelocityModes : public testing::WithParamInterface<OperationModes>,
+struct ProfileVelocityModes : public testing::WithParamInterface<DS402OperationModes>,
                               public ChannelTestBase {
     JointState cmd;
 
@@ -315,11 +315,11 @@ TEST_P(ProfileVelocityModes, it_tracks_joint_state_updates) {
 INSTANTIATE_TEST_CASE_P(
     ChannelTestProfileVelocityModes,
     ProfileVelocityModes,
-    testing::Values(OPERATION_MODE_VELOCITY_POSITION_PROFILE,
-                    OPERATION_MODE_VELOCITY_PROFILE)
+    testing::Values(DS402_OPERATION_MODE_VELOCITY_POSITION_PROFILE,
+                    DS402_OPERATION_MODE_VELOCITY_PROFILE)
 );
 
-struct ProfileRelativePositionModes : public testing::WithParamInterface<OperationModes>,
+struct ProfileRelativePositionModes : public testing::WithParamInterface<DS402OperationModes>,
                                       public ChannelTestBase {
     JointState cmd;
 
@@ -437,10 +437,10 @@ TEST_P(ProfileRelativePositionModes, it_tracks_joint_state_updates) {
 INSTANTIATE_TEST_CASE_P(
     ChannelTestProfileRelativePositionModes,
     ProfileRelativePositionModes,
-    testing::Values(OPERATION_MODE_RELATIVE_POSITION_PROFILE)
+    testing::Values(DS402_OPERATION_MODE_RELATIVE_POSITION_PROFILE)
 );
 
-struct DirectRelativePositionModes : public testing::WithParamInterface<OperationModes>,
+struct DirectRelativePositionModes : public testing::WithParamInterface<DS402OperationModes>,
                                      public ChannelTestBase {
     JointState cmd;
 
@@ -518,10 +518,10 @@ TEST_P(DirectRelativePositionModes, it_tracks_joint_state_updates) {
 INSTANTIATE_TEST_CASE_P(
     ChannelTestDirectRelativePositionModes,
     DirectRelativePositionModes,
-    testing::Values(OPERATION_MODE_RELATIVE_POSITION)
+    testing::Values(DS402_OPERATION_MODE_RELATIVE_POSITION)
 );
 
-struct ProfileTorqueModes : public testing::WithParamInterface<OperationModes>,
+struct ProfileTorqueModes : public testing::WithParamInterface<DS402OperationModes>,
                             public ChannelTestBase {
     JointState cmd;
 
@@ -598,5 +598,5 @@ TEST_P(ProfileTorqueModes, it_tracks_joint_state_updates) {
 INSTANTIATE_TEST_CASE_P(
     ChannelTestProfileTorqueModes,
     ProfileTorqueModes,
-    testing::Values(OPERATION_MODE_TORQUE_PROFILE)
+    testing::Values(DS402_OPERATION_MODE_TORQUE_PROFILE)
 );
