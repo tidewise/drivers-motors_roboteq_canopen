@@ -80,6 +80,9 @@ namespace motors_roboteq_canopen {
          * @see setupJointCommandRPDOs setJointCommand
          */
         std::vector<canbus::Message> getRPDOMessages() const;
+
+        /** Get the SDO write messages that update the joint command */
+        std::vector<canbus::Message> queryJointCommandDownload() const;
     };
 }
 

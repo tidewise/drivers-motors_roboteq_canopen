@@ -169,3 +169,11 @@ std::vector<canbus::Message> Driver::getRPDOMessages() const {
     return messages;
 }
 
+std::vector<canbus::Message> Driver::queryJointCommandDownload() const {
+    std::vector<canbus::Message> messages;
+    for (auto const& channel : m_channels) {
+        auto const& channel_msgs = channel.queryJointCommandDownload();
+        messages.insert(messages.end(), channel_msgs.begin(), channel_msgs.end());
+    }
+    return messages;
+}
