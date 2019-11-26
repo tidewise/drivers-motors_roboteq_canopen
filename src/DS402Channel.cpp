@@ -17,6 +17,10 @@ DS402Channel::DS402Channel(DS402Driver& driver, int channel)
     }
 }
 
+bool DS402Channel::isIgnored() const {
+    return m_operation_mode == DS402_OPERATION_MODE_NONE;
+}
+
 std::vector<canbus::Message> DS402Channel::sendDS402Transition(
     ControlWord::Transition transition, bool enable_halt
 ) const {
@@ -35,10 +39,6 @@ std::vector<canbus::Message> DS402Channel::queryDS402Status() const {
 
 StatusWord DS402Channel::getDS402Status() const {
     return StatusWord::fromRaw(get<StatusWordRaw>());
-}
-
-void DS402Channel::setFactors(Factors const& factors) {
-    m_factors = factors;
 }
 
 bool DS402Channel::updateJointStateTracking(canopen_master::StateMachine::Update const& update) {

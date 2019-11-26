@@ -9,6 +9,7 @@
 #include <motors_roboteq_canopen/Objects.hpp>
 #include <motors_roboteq_canopen/Factors.hpp>
 #include <motors_roboteq_canopen/Exceptions.hpp>
+#include <motors_roboteq_canopen/ChannelBase.hpp>
 
 namespace motors_roboteq_canopen {
     class DS402Driver;
@@ -16,7 +17,7 @@ namespace motors_roboteq_canopen {
     /**
      * Control of a single controller channel
      */
-    class DS402Channel {
+    class DS402Channel : public ChannelBase {
     public:
         /** Return the object id and sub-id needed to access the given dictionary object
          * for this channel
@@ -33,7 +34,6 @@ namespace motors_roboteq_canopen {
         int m_channel;
         int m_object_id_offset;
 
-        Factors m_factors;
         DS402OperationModes m_operation_mode = DS402_OPERATION_MODE_NONE;
         base::JointState m_current_command;
         bool m_command_fields[base::JointState::UNSET];
@@ -74,6 +74,8 @@ namespace motors_roboteq_canopen {
         uint32_t getJointStateMask() const;
 
     public:
+        bool isIgnored() const;
+
         /** Send a DS402 transition */
         std::vector<canbus::Message> sendDS402Transition(
             ControlWord::Transition transition, bool enable_halt
@@ -84,13 +86,6 @@ namespace motors_roboteq_canopen {
 
         /** Get the DS402 state machine status */
         StatusWord getDS402Status() const;
-
-        /** Set conversion factors for the given channel
-         *
-         * Conversion factors are used to convert from Roboteq's internal
-         * representations to Rock's (i.e. SI)
-         */
-        void setFactors(Factors const& factors);
 
         /** Get the channel's joint state */
         std::vector<canbus::Message> queryJointState() const;
