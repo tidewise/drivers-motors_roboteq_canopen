@@ -11,10 +11,6 @@ DS402Channel::DS402Channel(DS402Driver& driver, int channel)
     : m_driver(driver)
     , m_channel(channel)
     , m_object_id_offset(channel * CHANNEL_OBJECT_ID_OFFSET) {
-
-    for (auto& f : m_command_fields) {
-        f = false;
-    }
 }
 
 bool DS402Channel::isIgnored() const {

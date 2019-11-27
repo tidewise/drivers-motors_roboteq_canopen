@@ -1,6 +1,10 @@
 rock_library(motors_roboteq_canopen
-    SOURCES Driver.cpp DS402Driver.cpp Factors.cpp ChannelBase.cpp DS402Channel.cpp Objects.cpp
-    HEADERS Driver.hpp DS402Driver.hpp Factors.hpp ChannelBase.hpp DS402Channel.hpp Objects.hpp
+    SOURCES DriverBase.cpp Driver.cpp DS402Driver.cpp
+            ChannelBase.cpp Channel.cpp DS402Channel.cpp
+            Factors.cpp Objects.cpp
+    HEADERS DriverBase.hpp Driver.hpp DS402Driver.hpp
+            ChannelBase.hpp Channel.hpp DS402Channel.hpp
+            Factors.hpp Objects.hpp
             ControllerStatus.hpp Exceptions.hpp
     DEPS_PKGCONFIG base-types canopen_master)
 

@@ -1,43 +1,31 @@
-#ifndef MOTORS_ROBOTEQ_CANOPEN_DS402CHANNEL_HPP
-#define MOTORS_ROBOTEQ_CANOPEN_DS402CHANNEL_HPP
-
-#include <vector>
+#ifndef MOTORS_ROBOTEQ_CANOPEN_CHANNEL_HPP
+#define MOTORS_ROBOTEQ_CANOPEN_CHANNEL_HPP
 
 #include <base/JointState.hpp>
 #include <canopen_master/PDOMapping.hpp>
 #include <canopen_master/StateMachine.hpp>
+#include <motors_roboteq_canopen/ChannelBase.hpp>
 #include <motors_roboteq_canopen/Objects.hpp>
 #include <motors_roboteq_canopen/Factors.hpp>
 #include <motors_roboteq_canopen/Exceptions.hpp>
-#include <motors_roboteq_canopen/ChannelBase.hpp>
 
 namespace motors_roboteq_canopen {
-    class DS402Driver;
+    class Driver;
 
     /**
      * Control of a single controller channel
      */
-    class DS402Channel : public ChannelBase {
-    public:
-        /** Return the object id and sub-id needed to access the given dictionary object
-         * for this channel
-         */
-        template<typename T>
-        std::pair<int, int> getObjectOffsets() const;
-
+    class Channel : public ChannelBase {
     private:
-        friend class DS402Driver;
+        friend class Driver;
 
-        static const int CHANNEL_OBJECT_ID_OFFSET = 0x800;
-
-        DS402Driver& m_driver;
+        Driver& m_driver;
         int m_channel;
-        int m_object_id_offset;
 
-        DS402OperationModes m_operation_mode = DS402_OPERATION_MODE_NONE;
+        ControlModes m_control_mode = CONTROL_NONE;
         base::JointState m_current_command;
 
-        DS402Channel(DS402Driver& driver, int channel);
+        Channel(Driver& driver, int channel);
         double validateField(base::JointState::MODE i, base::JointState const& cmd);
 
         template<typename T>
@@ -62,10 +50,7 @@ namespace motors_roboteq_canopen {
         enum JointStateTracking {
             UPDATED_MOTOR_AMPS = 0x1,
             UPDATED_POWER_LEVEL = 0x2,
-            UPDATED_ACTUAL_PROFILE_VELOCITY = 0x4,
-            UPDATED_ACTUAL_VELOCITY = 0x8,
-            UPDATED_POSITION = 0x10,
-            UPDATED_TORQUE = 0x20
+            UPDATED_FEEDBACK = 0x4
         };
 
         uint8_t m_joint_state_tracking = 0;
@@ -75,16 +60,8 @@ namespace motors_roboteq_canopen {
     public:
         bool isIgnored() const;
 
-        /** Send a DS402 transition */
-        std::vector<canbus::Message> sendDS402Transition(
-            ControlWord::Transition transition, bool enable_halt
-        ) const;
-
-        /** Get the DS402 state machine status */
-        std::vector<canbus::Message> queryDS402Status() const;
-
-        /** Get the DS402 state machine status */
-        StatusWord getDS402Status() const;
+        /** Return a SDO download query to stop the motor */
+        canbus::Message queryMotorStop() const;
 
         /** Get the channel's joint state */
         std::vector<canbus::Message> queryJointState() const;
@@ -95,23 +72,18 @@ namespace motors_roboteq_canopen {
         /** Add the joint state object to the PDO mapping */
         std::vector<canopen_master::PDOMapping> getJointStateTPDOMapping() const;
 
-        /** Return the SDO messages that would update the drive's operation mode
-         * for this channel
-         */
-        std::vector<canbus::Message> queryOperationModeDownload(
-            DS402OperationModes mode
-        );
-
         /**
-         * Change the DS402Channel's internal state to reflect a change of operation
-         * mode
+         * Set the channel's operating mode
+         *
+         * Note that the CANOpen interface cannot change the mode. This is set to
+         * tell the driver in which mode the channel has been configured
          */
-        void setOperationMode(DS402OperationModes mode);
+        void setControlMode(ControlModes mode);
 
         /**
          * Return the channel's operation mode
          */
-        DS402OperationModes getOperationMode() const;
+        ControlModes getControlMode() const;
 
         /** Set command objects in the object dictionary */
         void setJointCommand(base::JointState const& cmd);
@@ -146,5 +118,4 @@ namespace motors_roboteq_canopen {
         void resetJointStateTracking();
     };
 }
-
 #endif

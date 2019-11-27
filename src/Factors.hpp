@@ -30,12 +30,22 @@ namespace motors_roboteq_canopen {
         /** Torque constant in A/Nm */
         double torque_constant = 1;
 
+        /** Max amps configured on the motor
+         *
+         * This is used in non-DS402 mode to compute the command in torque mode
+         *
+         * The high default value makes torque control essentially produce zero
+         * commands
+         */
+        double max_current = 1000;
+
         float relativeSpeedToSI(int32_t position) const;
         float relativePositionToSI(int32_t position) const;
         float pwmToFloat(int16_t value) const;
 
         int32_t relativePositionFromSI(float position) const;
         int32_t relativeSpeedFromSI(float value) const;
+        int32_t relativeTorqueFromSI(float value) const;
         float rpmFromSI(float speed) const;
         float rpmToSI(float speed) const;
 

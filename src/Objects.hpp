@@ -4,10 +4,11 @@
 #include <canopen_master/Objects.hpp>
 
 namespace motors_roboteq_canopen {
+    CANOPEN_DEFINE_OBJECT(0x2000, 1, SetCommand,                    std::int32_t);
     CANOPEN_DEFINE_OBJECT(0x2002, 1, SetSpeedTarget,                std::int16_t);
     CANOPEN_DEFINE_OBJECT(0x200C, 0, EmergencyShutdown,             std::uint8_t);
     CANOPEN_DEFINE_OBJECT(0x200D, 0, ReleaseShutdown,               std::uint8_t);
-    CANOPEN_DEFINE_OBJECT(0x200E, 0, Stop,                          std::uint8_t);
+    CANOPEN_DEFINE_OBJECT(0x200E, 0, MotorStop,                     std::uint8_t);
 
     CANOPEN_DEFINE_OBJECT(0x2100, 1, MotorAmps,                     std::int16_t);
     CANOPEN_DEFINE_OBJECT(0x2102, 1, AppliedPowerLevel,             std::int16_t);
@@ -18,6 +19,7 @@ namespace motors_roboteq_canopen {
     CANOPEN_DEFINE_OBJECT(0x210F, 1, TemperatureMCU,                std::int8_t);
     CANOPEN_DEFINE_OBJECT(0x210F, 2, TemperatureSensor0,            std::int8_t);
 
+    CANOPEN_DEFINE_OBJECT(0x2110, 0, Feedback,                      std::int32_t);
     CANOPEN_DEFINE_OBJECT(0x2111, 0, StatusFlagsRaw,                std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x2112, 0, FaultFlagsRaw,                 std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x2114, 1, ClosedLoopError,               std::int32_t);
@@ -47,8 +49,42 @@ namespace motors_roboteq_canopen {
     CANOPEN_DEFINE_OBJECT(0x6087, 0, TorqueSlope,                   std::uint32_t);
     CANOPEN_DEFINE_OBJECT(0x60FF, 0, TargetProfileVelocity,         std::int32_t);
 
-    enum DS402OperationModes
-    {
+    enum ControlModes {
+        /** Completely ignore this channel */
+        CONTROL_IGNORED,
+
+        /** Report the channel state but do not control it */
+        CONTROL_NONE,
+
+        /** Direct PWM control */
+        CONTROL_OPEN_LOOP,
+
+        /** Speed control */
+        CONTROL_SPEED,
+
+        /** PIV control: position is computed as integral of speed command,
+         * and the motor is controlled to reach this generated position
+         */
+        CONTROL_SPEED_POSITION,
+
+        /**
+         * Position control with acceleration and speed ramps
+         */
+        CONTROL_PROFILED_POSITION,
+
+        /**
+         * Direct position control. This is called "Position Tracking" in
+         * Roboteq's documentation
+         */
+        CONTROL_POSITION,
+
+        /** PIV control: position is computed as integral of speed command,
+         * and the motor is controlled to reach this generated position
+         */
+        CONTROL_TORQUE
+    };
+
+    enum DS402OperationModes {
         /** Velocity-Position control loop, no profile
          *
          * The controller generates a position trajectory from a velocity
