@@ -19,7 +19,7 @@ namespace motors_roboteq_canopen {
     CANOPEN_DEFINE_OBJECT(0x210F, 1, TemperatureMCU,                std::int8_t);
     CANOPEN_DEFINE_OBJECT(0x210F, 2, TemperatureSensor0,            std::int8_t);
 
-    CANOPEN_DEFINE_OBJECT(0x2110, 0, Feedback,                      std::int32_t);
+    CANOPEN_DEFINE_OBJECT(0x2110, 1, Feedback,                      std::int16_t);
     CANOPEN_DEFINE_OBJECT(0x2111, 0, StatusFlagsRaw,                std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x2112, 0, FaultFlagsRaw,                 std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x2114, 1, ClosedLoopError,               std::int32_t);
