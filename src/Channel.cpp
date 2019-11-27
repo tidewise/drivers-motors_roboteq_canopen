@@ -49,7 +49,9 @@ vector<PDOMapping> Channel::getJointStateTPDOMapping() const {
     PDOMapping mapping;
     mapping.add<MotorAmps>(0, m_channel);
     mapping.add<AppliedPowerLevel>(0, m_channel);
-    mapping.add<Feedback>(0, m_channel);
+    if (m_control_mode != CONTROL_OPEN_LOOP) {
+        mapping.add<Feedback>(0, m_channel);
+    }
     return vector<PDOMapping> { mapping };
 }
 
@@ -61,7 +63,9 @@ vector<canbus::Message> Channel::queryJointState() const {
 
     messages.push_back(queryUpload<MotorAmps>());
     messages.push_back(queryUpload<AppliedPowerLevel>());
-    messages.push_back(queryUpload<Feedback>());
+    if (m_control_mode != CONTROL_OPEN_LOOP) {
+        messages.push_back(queryUpload<Feedback>());
+    }
     return messages;
 }
 
@@ -74,19 +78,22 @@ JointState Channel::getJointState() const {
     state.effort = m_factors.currentToTorqueSI(get<MotorAmps>());
     state.raw = m_factors.pwmToFloat(get<AppliedPowerLevel>());
 
-    int32_t feedback = get<Feedback>();
     switch (m_control_mode) {
         case CONTROL_NONE:
         case CONTROL_OPEN_LOOP:
             return state;
         case CONTROL_SPEED:
-        case CONTROL_SPEED_POSITION:
+        case CONTROL_SPEED_POSITION: {
+            int32_t feedback = get<Feedback>();
             state.speed = m_factors.relativeSpeedToSI(feedback);
             return state;
+        }
         case CONTROL_PROFILED_POSITION:
-        case CONTROL_POSITION:
+        case CONTROL_POSITION: {
+            int32_t feedback = get<Feedback>();
             state.position = m_factors.relativePositionToSI(feedback);
             return state;
+        }
         case CONTROL_TORQUE:
             return state;
         default:
