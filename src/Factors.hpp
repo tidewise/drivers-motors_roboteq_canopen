@@ -47,6 +47,9 @@ namespace motors_roboteq_canopen {
 
         /** Current slope in A * 1e4 / seconds from torque slope */
         int16_t currentSlopeFromTorqueSlopeSI(float value) const;
+
+        /** Clamp a float value in [-1000, 1000], returning it as integer */
+        static int32_t clamp1000(float value);
     };
 }
 

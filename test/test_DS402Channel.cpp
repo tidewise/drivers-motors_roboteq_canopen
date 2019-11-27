@@ -379,7 +379,7 @@ TEST_P(ProfileRelativePositionModes, it_writes_the_target_position_and_desired_v
     int32_t rpm = can_open.get<int32_t>(0x6881, 0);
     int16_t acceleration = can_open.get<uint32_t>(0x6883, 0);
     int16_t deceleration = can_open.get<uint32_t>(0x6884, 0);
-    ASSERT_EQ(position, 167);
+    ASSERT_EQ(position, 168);
     ASSERT_EQ(rpm, 4);
     ASSERT_EQ(acceleration, 28);
     ASSERT_EQ(deceleration, 28);
@@ -489,7 +489,7 @@ TEST_P(DirectRelativePositionModes, it_creates_a_RPDO_mappings) {
 TEST_P(DirectRelativePositionModes, it_writes_the_target_position) {
     channel.setJointCommand(cmd);
     int32_t position = can_open.get<int32_t>(0x687a, 0);
-    ASSERT_EQ(position, 167);
+    ASSERT_EQ(position, 168);
 }
 
 TEST_P(DirectRelativePositionModes, it_throws_if_the_position_field_is_not_set) {
