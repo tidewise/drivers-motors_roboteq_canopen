@@ -6,7 +6,7 @@
 #include <canbus/Message.hpp>
 #include <canopen_master/SDO.hpp>
 #include <canopen_master/PDOMapping.hpp>
-#include <motors_roboteq_canopen/Driver.hpp>
+#include <motors_roboteq_canopen/DS402Driver.hpp>
 
 struct Helpers : testing::Test {
     void ASSERT_QUERIES_SDO_UPLOAD(std::vector<canbus::Message> const& queries,
@@ -35,7 +35,7 @@ struct Helpers : testing::Test {
 
     template<typename T>
     canbus::Message make_sdo_ack(
-        motors_roboteq_canopen::Driver& driver, int node_id, int channel_id
+        motors_roboteq_canopen::DS402Driver& driver, int node_id, int channel_id
     ) {
         canbus::Message msg;
         msg.can_id = node_id | canopen_master::FUNCTION_SDO_TRANSMIT;
@@ -53,7 +53,7 @@ struct Helpers : testing::Test {
 
     template<typename T>
     void ASSERT_JOINT_STATE_UPDATE(
-        motors_roboteq_canopen::Driver& driver, int node_id,
+        motors_roboteq_canopen::DS402Driver& driver, int node_id,
         bool channel0, bool channel1, bool channel2
     ) {
         bool channels_value[3] = { channel0, channel1, channel2 };

@@ -1,6 +1,6 @@
 #include <gtest/gtest.h>
 #include "Helpers.hpp"
-#include <motors_roboteq_canopen/Driver.hpp>
+#include <motors_roboteq_canopen/DS402Driver.hpp>
 
 using namespace motors_roboteq_canopen;
 
@@ -9,7 +9,7 @@ struct DriverTest : public Helpers {
     static const int CHANNEL_COUNT = 3;
 
     canopen_master::StateMachine can_open;
-    Driver driver;
+    DS402Driver driver;
 
     DriverTest()
         : can_open(NODE_ID)
@@ -76,9 +76,9 @@ TEST_F(DriverTest, it_returns_controller_status) {
 }
 
 TEST_F(DriverTest, it_sets_up_joint_state_TPDOs) {
-    driver.getChannel(0).setOperationMode(OPERATION_MODE_TORQUE_PROFILE);
-    driver.getChannel(1).setOperationMode(OPERATION_MODE_VELOCITY);
-    driver.getChannel(2).setOperationMode(OPERATION_MODE_RELATIVE_POSITION);
+    driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
+    driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
+    driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
 
     std::vector<canbus::Message> messages;
     int nextPDO = driver.setupJointStateTPDOs(
@@ -100,9 +100,9 @@ TEST_F(DriverTest, it_sets_up_joint_state_TPDOs) {
 }
 
 TEST_F(DriverTest, it_sets_up_joint_command_RPDOs) {
-    driver.getChannel(0).setOperationMode(OPERATION_MODE_TORQUE_PROFILE);
-    driver.getChannel(1).setOperationMode(OPERATION_MODE_VELOCITY);
-    driver.getChannel(2).setOperationMode(OPERATION_MODE_RELATIVE_POSITION);
+    driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
+    driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
+    driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
 
     std::vector<canbus::Message> messages;
     int nextPDO = driver.setupJointCommandRPDOs(
@@ -148,14 +148,70 @@ TEST_F(DriverTest, it_sets_up_status_TPDOs) {
 }
 
 TEST_F(DriverTest, it_updates_the_channels_joint_state_tracking_on_process) {
-    driver.getChannel(0).setOperationMode(OPERATION_MODE_TORQUE_PROFILE);
-    driver.getChannel(1).setOperationMode(OPERATION_MODE_VELOCITY_PROFILE);
-    driver.getChannel(2).setOperationMode(OPERATION_MODE_RELATIVE_POSITION);
+    driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_VELOCITY_PROFILE);
+    driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
+    driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
 
     ASSERT_JOINT_STATE_UPDATE<MotorAmps>(false, false, false);
-    ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false, false, false);
-    ASSERT_JOINT_STATE_UPDATE<ActualProfileVelocity>(false, true, false);
-    ASSERT_JOINT_STATE_UPDATE<ActualVelocity>(false, true, false);
-    ASSERT_JOINT_STATE_UPDATE<Position>(false, true, true);
-    ASSERT_JOINT_STATE_UPDATE<Torque>(true, true, true);
+    ASSERT_JOINT_STATE_UPDATE<AppliedPowerLevel>(false, true, false);
+    ASSERT_JOINT_STATE_UPDATE<ActualProfileVelocity>(true, true, false);
+    ASSERT_JOINT_STATE_UPDATE<ActualVelocity>(true, true, false);
+    ASSERT_JOINT_STATE_UPDATE<Position>(true, true, true);
+}
+
+base::samples::Joints getJointCommand() {
+    base::samples::Joints cmd;
+    cmd.elements.push_back(base::JointState::Speed(2));
+    cmd.elements.push_back(base::JointState::Position(3));
+    auto torque_cmd = base::JointState::Effort(1);
+    torque_cmd.raw = 1;
+    cmd.elements.push_back(torque_cmd);
+    return cmd;
+}
+
+TEST_F(DriverTest, it_sets_the_joint_commands_on_all_joints) {
+    driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
+    driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
+    driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
+
+    base::samples::Joints cmd = getJointCommand();
+    driver.setJointCommand(cmd);
+
+    ASSERT_EQ(2, driver.getChannel(0).getJointCommand().speed);
+    ASSERT_EQ(3, driver.getChannel(1).getJointCommand().position);
+    ASSERT_EQ(1, driver.getChannel(2).getJointCommand().effort);
+}
+
+TEST_F(DriverTest, it_raises_if_there_are_too_few_commands) {
+    driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
+    driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
+    driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
+
+    base::samples::Joints cmd = getJointCommand();
+    cmd.elements.pop_back();
+    ASSERT_THROW(driver.setJointCommand(cmd), std::invalid_argument);
+}
+
+TEST_F(DriverTest, it_raises_if_there_are_too_many_commands) {
+    driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
+    driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
+    driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
+
+    base::samples::Joints cmd = getJointCommand();
+    cmd.elements.push_back(base::JointState::Position(3));
+    ASSERT_THROW(driver.setJointCommand(cmd), std::invalid_argument);
+}
+
+TEST_F(DriverTest, it_skips_the_joints_that_are_ignored) {
+    driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
+    driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_NONE);
+    driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
+
+    base::samples::Joints cmd;
+    cmd.elements.push_back(base::JointState::Speed(1));
+    cmd.elements.push_back(base::JointState::Position(3));
+    driver.setJointCommand(cmd);
+
+    ASSERT_EQ(1, driver.getChannel(0).getJointCommand().speed);
+    ASSERT_EQ(3, driver.getChannel(2).getJointCommand().position);
 }

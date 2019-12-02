@@ -4,6 +4,7 @@
 #include <canopen_master/Objects.hpp>
 
 namespace motors_roboteq_canopen {
+    CANOPEN_DEFINE_OBJECT(0x2002, 1, SetSpeedTarget,                std::int16_t);
     CANOPEN_DEFINE_OBJECT(0x200C, 0, EmergencyShutdown,             std::uint8_t);
     CANOPEN_DEFINE_OBJECT(0x200D, 0, ReleaseShutdown,               std::uint8_t);
     CANOPEN_DEFINE_OBJECT(0x200E, 0, Stop,                          std::uint8_t);
@@ -46,14 +47,14 @@ namespace motors_roboteq_canopen {
     CANOPEN_DEFINE_OBJECT(0x6087, 0, TorqueSlope,                   std::uint32_t);
     CANOPEN_DEFINE_OBJECT(0x60FF, 0, TargetProfileVelocity,         std::int32_t);
 
-    enum OperationModes
+    enum DS402OperationModes
     {
         /** Velocity-Position control loop, no profile
          *
          * The controller generates a position trajectory from a velocity
          * command, and runs the PID on the target position
          */
-        OPERATION_MODE_VELOCITY_POSITION = -4,
+        DS402_OPERATION_MODE_VELOCITY_POSITION = -4,
 
         /** Velocity-Position control loop, profile
          *
@@ -62,7 +63,7 @@ namespace motors_roboteq_canopen {
          *
          * The velocity trajectory is controlled with profile parameters
          */
-        OPERATION_MODE_VELOCITY_POSITION_PROFILE = -3,
+        DS402_OPERATION_MODE_VELOCITY_POSITION_PROFILE = -3,
 
         /** Direct PID control on relative position with velocity profile.
          *
@@ -71,7 +72,7 @@ namespace motors_roboteq_canopen {
          *
          * Direct position PID
          */
-        OPERATION_MODE_RELATIVE_POSITION_PROFILE = -2,
+        DS402_OPERATION_MODE_RELATIVE_POSITION_PROFILE = -2,
 
         /** Direct PID control on relative position, no profile.
          *
@@ -80,27 +81,33 @@ namespace motors_roboteq_canopen {
          *
          * Direct position PID
          */
-        OPERATION_MODE_RELATIVE_POSITION = -1,
+        DS402_OPERATION_MODE_RELATIVE_POSITION = -1,
 
         /** Open loop control
          */
-        OPERATION_MODE_NONE = 0,
+        DS402_OPERATION_MODE_NONE = 0,
 
         /** Direct PID control on absolute position with velocity profile
          */
-        OPERATION_MODE_POSITION_PROFILE = 1,
+        DS402_OPERATION_MODE_POSITION_PROFILE = 1,
 
         /** Direct PID control on velocity, no profile
          */
-        OPERATION_MODE_VELOCITY = 2,
+        DS402_OPERATION_MODE_VELOCITY = 2,
 
         /** Direct PID control on velocity with acceleration profile
          */
-        OPERATION_MODE_VELOCITY_PROFILE = 3,
+        DS402_OPERATION_MODE_VELOCITY_PROFILE = 3,
 
         /** Direct PID control on torque with ramps
          */
-        OPERATION_MODE_TORQUE_PROFILE = 4
+        DS402_OPERATION_MODE_TORQUE_PROFILE = 4,
+
+        /** Direct PID control on position for feedback based on analog inputs */
+        DS402_OPERATION_MODE_ANALOG_POSITION = 10,
+
+        /** Direct PID control on velocity for feedback based on analog inputs */
+        DS402_OPERATION_MODE_ANALOG_VELOCITY = 11
     };
 
     enum Updates {
@@ -128,12 +135,12 @@ namespace motors_roboteq_canopen {
             FAULT_RESET
         };
 
-        ControlWord(OperationModes mode, Transition transition, bool enable_halt)
+        ControlWord(DS402OperationModes mode, Transition transition, bool enable_halt)
             : operation_mode(mode)
             , transition(transition)
             , enable_halt(enable_halt) {}
 
-        OperationModes operation_mode;
+        DS402OperationModes operation_mode;
         Transition transition;
         bool enable_halt;
 

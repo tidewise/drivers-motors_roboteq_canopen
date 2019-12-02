@@ -1,5 +1,5 @@
-#ifndef MOTORS_ROBOTEQ_CANOPEN_CHANNEL_HPP
-#define MOTORS_ROBOTEQ_CANOPEN_CHANNEL_HPP
+#ifndef MOTORS_ROBOTEQ_CANOPEN_DS402CHANNEL_HPP
+#define MOTORS_ROBOTEQ_CANOPEN_DS402CHANNEL_HPP
 
 #include <vector>
 
@@ -11,12 +11,12 @@
 #include <motors_roboteq_canopen/Exceptions.hpp>
 
 namespace motors_roboteq_canopen {
-    class Driver;
+    class DS402Driver;
 
     /**
      * Control of a single controller channel
      */
-    class Channel {
+    class DS402Channel {
     public:
         /** Return the object id and sub-id needed to access the given dictionary object
          * for this channel
@@ -25,19 +25,20 @@ namespace motors_roboteq_canopen {
         std::pair<int, int> getObjectOffsets() const;
 
     private:
-        friend class Driver;
+        friend class DS402Driver;
 
         static const int CHANNEL_OBJECT_ID_OFFSET = 0x800;
 
-        Driver& m_driver;
+        DS402Driver& m_driver;
         int m_channel;
         int m_object_id_offset;
 
         Factors m_factors;
-        OperationModes m_operation_mode = OPERATION_MODE_NONE;
+        DS402OperationModes m_operation_mode = DS402_OPERATION_MODE_NONE;
+        base::JointState m_current_command;
         bool m_command_fields[base::JointState::UNSET];
 
-        Channel(Driver& driver, int channel);
+        DS402Channel(DS402Driver& driver, int channel);
         double validateField(base::JointState::MODE i, base::JointState const& cmd);
 
         template<typename T>
@@ -104,17 +105,25 @@ namespace motors_roboteq_canopen {
          * for this channel
          */
         std::vector<canbus::Message> queryOperationModeDownload(
-            OperationModes mode
+            DS402OperationModes mode
         );
 
         /**
-         * Change the Channel's internal state to reflect a change of operation
+         * Change the DS402Channel's internal state to reflect a change of operation
          * mode
          */
-        void setOperationMode(OperationModes mode);
+        void setOperationMode(DS402OperationModes mode);
+
+        /**
+         * Return the channel's operation mode
+         */
+        DS402OperationModes getOperationMode() const;
 
         /** Set command objects in the object dictionary */
         void setJointCommand(base::JointState const& cmd);
+
+        /** Returns the last joint command set */
+        base::JointState getJointCommand() const;
 
         /** Return the SDO messages that would update the current command
          */
