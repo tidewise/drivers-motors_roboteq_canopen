@@ -1,0 +1,4 @@
+^MMOD 1
+
+# ^KD 1 100        # some other comments
+^CLERD 1 0# and some

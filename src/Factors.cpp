@@ -3,6 +3,20 @@
 
 using namespace motors_roboteq_canopen;
 
+int32_t Factors::clamp1000(float value) {
+    int32_t v = std::round(value);
+    if (v > 1000) {
+        return 1000;
+    }
+    else if (v < -1000) {
+        return -1000;
+    }
+    else {
+        return v;
+    }
+}
+
+
 static float toSI(int32_t roboteq, float max, int32_t zero, float min) {
     if (roboteq > zero) {
         return static_cast<float>(roboteq - zero) / (1000.0 - zero) * max;
@@ -13,12 +27,15 @@ static float toSI(int32_t roboteq, float max, int32_t zero, float min) {
 }
 
 static int32_t fromSI(float si, float max, int32_t zero, float min) {
+    float v;
     if (si > 0) {
-        return (si / max) * (1000.0 - zero) + zero;
+        v = (si / max) * (1000.0 - zero) + zero;
     }
     else {
-        return (si / min) * (-1000.0 - zero) + zero;
+        v = (si / min) * (-1000.0 - zero) + zero;
     }
+
+    return Factors::clamp1000(std::round(v));
 }
 
 float Factors::relativePositionToSI(int32_t position) const {
@@ -34,7 +51,12 @@ float Factors::relativeSpeedToSI(int32_t speed) const {
 }
 
 int32_t Factors::relativeSpeedFromSI(float speed) const {
-    return fromSI(speed, speed_max, speed_zero, speed_min);
+    return clamp1000(fromSI(speed, speed_max, speed_zero, speed_min));
+}
+
+int32_t Factors::relativeTorqueFromSI(float torque) const {
+    float current = currentFromTorqueSI(torque);
+    return clamp1000(fromSI(current, max_current, 0, -max_current));
 }
 
 float Factors::rpmToSI(float speed) const {

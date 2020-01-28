@@ -34,13 +34,17 @@ TEST_F(FactorsTest, it_returns_speed_zero_at_SI_zero) {
 TEST_F(FactorsTest, it_returns_speed_minus_1000_at_SI_speed_min) {
     ASSERT_FLOAT_EQ(-1000, factors.relativeSpeedFromSI(-10));
 }
+TEST_F(FactorsTest, it_clamps_the_relative_speed_at_minus_1000) {
+    ASSERT_FLOAT_EQ(-1000, factors.relativeSpeedFromSI(-20));
+}
 
 TEST_F(FactorsTest, it_returns_speed_1000_at_SI_speed_max) {
     ASSERT_FLOAT_EQ(1000, factors.relativeSpeedFromSI(42));
 }
 
-
-
+TEST_F(FactorsTest, it_clamps_the_relative_speed_at_plus_1000) {
+    ASSERT_FLOAT_EQ(1000, factors.relativeSpeedFromSI(50));
+}
 
 TEST_F(FactorsTest, it_returns_SI_zero_at_position_zero) {
     ASSERT_FLOAT_EQ(0, factors.relativePositionToSI(250));
@@ -62,6 +66,14 @@ TEST_F(FactorsTest, it_returns_position_minus_1000_at_SI_position_min) {
     ASSERT_FLOAT_EQ(-1000, factors.relativePositionFromSI(-100));
 }
 
+TEST_F(FactorsTest, it_clamps_the_relative_position_at_minus_1000) {
+    ASSERT_FLOAT_EQ(-1000, factors.relativePositionFromSI(-200));
+}
+
 TEST_F(FactorsTest, it_returns_position_1000_at_SI_position_max) {
     ASSERT_FLOAT_EQ(1000, factors.relativePositionFromSI(84));
+}
+
+TEST_F(FactorsTest, it_clamps_the_relative_position_at_plus_1000) {
+    ASSERT_FLOAT_EQ(1000, factors.relativePositionFromSI(85));
 }
