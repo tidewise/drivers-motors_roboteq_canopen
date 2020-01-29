@@ -45,63 +45,63 @@ struct SerialCommandWriterTest : public ::testing::Test,
 
 TEST_F(SerialCommandWriterTest, it_sends_a_command_with_parameters_and_validates_the_reply) {
     IODRIVERS_BASE_MOCK();
-    EXPECT_COMMAND("^MMOD 1 4\r\n", "^MMOD 1 4+");
+    EXPECT_COMMAND("^MMOD 1 4\r\n", "^MMOD 1 4+\r");
     driver.executeCommand("^MMOD 1 4");
 }
 
 TEST_F(SerialCommandWriterTest, it_ignores_garbage_in_the_received_stream) {
     IODRIVERS_BASE_MOCK();
-    EXPECT_COMMAND("^MMOD 1 4\r\n", "BR\n\r^MR^MMOD 1 4+");
+    EXPECT_COMMAND("^MMOD 1 4\r\n", "BR\n\r^MR^MMOD 1 4+\r");
     driver.executeCommand("^MMOD 1 4");
 }
 
 TEST_F(SerialCommandWriterTest, it_throws_if_the_command_is_rejected) {
     IODRIVERS_BASE_MOCK();
-    EXPECT_COMMAND("^MMOD 1 4\r\n", "^MMOD 1 4-");
+    EXPECT_COMMAND("^MMOD 1 4\r\n", "^MMOD 1 4-\r");
     ASSERT_THROW(driver.executeCommand("^MMOD 1 4"),
                  SerialCommandWriter::CommandFailed);
 }
 
 TEST_F(SerialCommandWriterTest, it_sends_a_command_file_that_contains_only_commands) {
     IODRIVERS_BASE_MOCK();
-    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+");
-    EXPECT_COMMAND("^KD 1 100\r\n", "^KD 1 100+");
-    EXPECT_COMMAND("^CLERD 1 0\r\n", "^CLERD 1 0+");
+    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+\r");
+    EXPECT_COMMAND("^KD 1 100\r\n", "^KD 1 100+\r");
+    EXPECT_COMMAND("^CLERD 1 0\r\n", "^CLERD 1 0+\r");
     sendFile("commands_only.txt");
 }
 
 TEST_F(SerialCommandWriterTest, it_ignores_comments_at_the_end_of_line) {
     IODRIVERS_BASE_MOCK();
-    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+");
-    EXPECT_COMMAND("^KD 1 100\r\n", "^KD 1 100+");
-    EXPECT_COMMAND("^CLERD 1 0\r\n", "^CLERD 1 0+");
+    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+\r");
+    EXPECT_COMMAND("^KD 1 100\r\n", "^KD 1 100+\r");
+    EXPECT_COMMAND("^CLERD 1 0\r\n", "^CLERD 1 0+\r");
     sendFile("with_inline_comments.txt");
 }
 
 TEST_F(SerialCommandWriterTest, it_ignores_comment_lines) {
     IODRIVERS_BASE_MOCK();
-    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+");
-    EXPECT_COMMAND("^CLERD 1 0\r\n", "^CLERD 1 0+");
+    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+\r");
+    EXPECT_COMMAND("^CLERD 1 0\r\n", "^CLERD 1 0+\r");
     sendFile("with_comment_lines.txt");
 }
 
 TEST_F(SerialCommandWriterTest, it_ignores_empty_lines) {
     IODRIVERS_BASE_MOCK();
-    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+");
-    EXPECT_COMMAND("^CLERD 1 0\r\n", "^CLERD 1 0+");
+    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+\r");
+    EXPECT_COMMAND("^CLERD 1 0\r\n", "^CLERD 1 0+\r");
     sendFile("with_empty_lines.txt");
 }
 
 TEST_F(SerialCommandWriterTest, it_rejects_files_containing_runtime_queries) {
     IODRIVERS_BASE_MOCK();
-    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+");
+    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+\r");
     ASSERT_THROW(sendFile("with_runtime_queries.txt"),
                  std::invalid_argument);
 }
 
 TEST_F(SerialCommandWriterTest, it_rejects_files_containing_configuration_queries) {
     IODRIVERS_BASE_MOCK();
-    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+");
+    EXPECT_COMMAND("^MMOD 1\r\n", "^MMOD 1+\r");
     ASSERT_THROW(sendFile("with_configuration_queries.txt"),
                  std::invalid_argument);
 }

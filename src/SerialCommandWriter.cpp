@@ -28,8 +28,8 @@ int SerialCommandWriter::extractPacket(uint8_t const* buffer, size_t buffer_size
         return 0;
     }
 
-    char lf = buffer[expected_reply_size - 2];
-    char ack = buffer[expected_reply_size - 1];
+    char ack = buffer[expected_reply_size - 2];
+    char lf = buffer[expected_reply_size - 1];
     if (lf != '\r' || (ack != '+' && ack != '-')) {
         return -1;
     }
@@ -57,7 +57,7 @@ void SerialCommandWriter::sendCommand(string const& command_line) {
 
     writePacket(
         reinterpret_cast<uint8_t const*>((command_line + "\r\n").c_str()),
-        command_line.size() + 1
+        command_line.size() + 2
     );
 }
 
@@ -71,7 +71,7 @@ void SerialCommandWriter::executeCommand(string const& command_line) {
         INTERNAL_BUFFER_SIZE
     );
 
-    if (read_buffer[length - 1] != '+') {
+    if (read_buffer[length - 2] != '+') {
         throw CommandFailed(command_line);
     }
     else {
