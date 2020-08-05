@@ -17,46 +17,34 @@ int32_t Factors::clamp1000(float value) {
 }
 
 
-static float toSI(int32_t roboteq, float max, int32_t zero, float min) {
-    if (roboteq > zero) {
-        return static_cast<float>(roboteq - zero) / (1000.0 - zero) * max;
-    }
-    else {
-        return static_cast<float>(zero - roboteq) / (1000.0 + zero) * min;
-    }
+static float toSI(int32_t roboteq, float max, float min) {
+    return (roboteq + 1000) * (max - min) / 2000 + min;
 }
 
-static int32_t fromSI(float si, float max, int32_t zero, float min) {
-    float v;
-    if (si > 0) {
-        v = (si / max) * (1000.0 - zero) + zero;
-    }
-    else {
-        v = (si / min) * (-1000.0 - zero) + zero;
-    }
-
+static int32_t fromSI(float si, float max, float min) {
+    float v = (si - min) / (max - min) * 2000 - 1000;
     return Factors::clamp1000(std::round(v));
 }
 
 float Factors::relativePositionToSI(int32_t position) const {
-    return toSI(position, position_max, position_zero, position_min);
+    return toSI(position, position_max, position_min);
 }
 
 int32_t Factors::relativePositionFromSI(float position) const {
-    return fromSI(position, position_max, position_zero, position_min);
+    return fromSI(position, position_max, position_min);
 }
 
 float Factors::relativeSpeedToSI(int32_t speed) const {
-    return toSI(speed, speed_max, speed_zero, speed_min);
+    return toSI(speed, speed_max, speed_min);
 }
 
 int32_t Factors::relativeSpeedFromSI(float speed) const {
-    return clamp1000(fromSI(speed, speed_max, speed_zero, speed_min));
+    return clamp1000(fromSI(speed, speed_max, speed_min));
 }
 
 int32_t Factors::relativeTorqueFromSI(float torque) const {
     float current = currentFromTorqueSI(torque);
-    return clamp1000(fromSI(current, max_current, 0, -max_current));
+    return clamp1000(fromSI(current, max_current, -max_current));
 }
 
 float Factors::rpmToSI(float speed) const {
