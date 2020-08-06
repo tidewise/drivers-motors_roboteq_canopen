@@ -25,10 +25,8 @@ struct ChannelTestBase : public Helpers {
         , channel(driver.getChannel(CHANNEL_ID)) {
 
         Factors factors;
-        factors.speed_zero = -50;
         factors.speed_min = -1;
         factors.speed_max = 2.5;
-        factors.position_zero = 100;
         factors.position_min = -3;
         factors.position_max = 4;
         factors.torque_constant = 0.3;
@@ -379,7 +377,7 @@ TEST_P(ProfileRelativePositionModes, it_writes_the_target_position_and_desired_v
     int32_t rpm = can_open.get<int32_t>(0x6881, 0);
     int16_t acceleration = can_open.get<uint32_t>(0x6883, 0);
     int16_t deceleration = can_open.get<uint32_t>(0x6884, 0);
-    ASSERT_EQ(position, 168);
+    ASSERT_EQ(position, -57);
     ASSERT_EQ(rpm, 4);
     ASSERT_EQ(acceleration, 28);
     ASSERT_EQ(deceleration, 28);
@@ -405,7 +403,7 @@ TEST_P(ProfileRelativePositionModes, it_reports_joint_effort_pwm_and_position) {
     can_open.set<int16_t>(0x2100, 2, 12);
     can_open.set<int16_t>(0x2102, 2, 400);
     auto state = channel.getJointState();
-    ASSERT_NEAR(0.0888, state.position, 1e-4);
+    ASSERT_NEAR(0.92, state.position, 1e-4);
     ASSERT_FLOAT_EQ(1.2 / 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
@@ -489,7 +487,7 @@ TEST_P(DirectRelativePositionModes, it_creates_a_RPDO_mappings) {
 TEST_P(DirectRelativePositionModes, it_writes_the_target_position) {
     channel.setJointCommand(cmd);
     int32_t position = can_open.get<int32_t>(0x687a, 0);
-    ASSERT_EQ(position, 168);
+    ASSERT_EQ(position, -57);
 }
 
 TEST_P(DirectRelativePositionModes, it_throws_if_the_position_field_is_not_set) {
@@ -502,7 +500,7 @@ TEST_P(DirectRelativePositionModes, it_reports_joint_effort_pwm_and_position) {
     can_open.set<int16_t>(0x2100, 2, 12);
     can_open.set<int16_t>(0x2102, 2, 400);
     auto state = channel.getJointState();
-    ASSERT_NEAR(0.088888, state.position, 1e-4);
+    ASSERT_NEAR(0.92, state.position, 1e-4);
     ASSERT_FLOAT_EQ(1.2 / 0.3, state.effort);
     ASSERT_FLOAT_EQ(0.4, state.raw);
 }
