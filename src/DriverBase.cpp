@@ -4,6 +4,7 @@
 using namespace std;
 using namespace base;
 using canopen_master::PDOMapping;
+using canopen_master::PDOCommunicationParameters;
 using namespace motors_roboteq_canopen;
 
 DriverBase::DriverBase(canopen_master::StateMachine& state_machine)
@@ -33,7 +34,58 @@ canopen_master::StateMachine::Update DriverBase::process(canbus::Message const& 
     for (auto c : m_channels) {
         c->updateJointStateTracking(update);
     }
+    for (auto single_update : update) {
+        if (single_update.first == AnalogInput::OBJECT_ID) {
+            m_received_analog_inputs_mask |= 1 << (single_update.second - 1);
+        }
+        else if (single_update.first == ConvertedAnalogInput::OBJECT_ID) {
+            m_received_converted_analog_inputs_mask |= 1 << (single_update.second - 1);
+        }
+    }
     return update;
+}
+
+bool DriverBase::hasAnalogInputUpdate() const {
+    return m_expected_analog_inputs_mask == m_received_analog_inputs_mask;
+}
+
+void DriverBase::setAnalogInputEnableInTPDO(int index, bool flag) {
+    if (flag) {
+        m_expected_analog_inputs_mask |= 1 << index;
+    }
+    else {
+        m_expected_analog_inputs_mask &= ~(1 << index);
+    }
+}
+
+void DriverBase::resetAnalogInputTracking() {
+    m_received_analog_inputs_mask = 0;
+}
+
+bool DriverBase::hasConvertedAnalogInputUpdate() const {
+    return m_expected_converted_analog_inputs_mask ==
+           m_received_converted_analog_inputs_mask;
+}
+
+void DriverBase::setConvertedAnalogInputEnableInTPDO(int index, bool flag) {
+    if (flag) {
+        m_expected_converted_analog_inputs_mask |= 1 << index;
+    }
+    else {
+        m_expected_converted_analog_inputs_mask &= ~(1 << index);
+    }
+}
+
+void DriverBase::resetConvertedAnalogInputTracking() {
+    m_received_converted_analog_inputs_mask = 0;
+}
+
+canbus::Message DriverBase::queryAnalogInput(int index) const {
+    return queryUpload<AnalogInput>(0, index + 1);
+}
+
+canbus::Message DriverBase::queryAnalogInputConverted(int index) const {
+    return queryUpload<ConvertedAnalogInput>(0, index + 1);
 }
 
 vector<canbus::Message> DriverBase::queryControllerStatus() {
@@ -71,8 +123,8 @@ ChannelBase& DriverBase::getChannel(int i) {
     return *m_channels.at(i);
 }
 
-int DriverBase::setupJointStateTPDOs(std::vector<canbus::Message>& messages,
-    int pdoStartIndex, canopen_master::PDOCommunicationParameters const& parameters
+int DriverBase::setupJointStateTPDOs(vector<canbus::Message>& messages,
+    int pdoStartIndex, PDOCommunicationParameters const& parameters
 ) {
     int pdoIndex = pdoStartIndex;
     for (auto channel : m_channels) {
@@ -88,8 +140,8 @@ int DriverBase::setupJointStateTPDOs(std::vector<canbus::Message>& messages,
     return pdoIndex;
 }
 
-int DriverBase::setupJointCommandRPDOs(std::vector<canbus::Message>& messages,
-    int pdoStartIndex, canopen_master::PDOCommunicationParameters const& parameters
+int DriverBase::setupJointCommandRPDOs(vector<canbus::Message>& messages,
+    int pdoStartIndex, PDOCommunicationParameters const& parameters
 ) {
     int pdoIndex = pdoStartIndex;
     for (auto const channel : m_channels) {
@@ -104,6 +156,56 @@ int DriverBase::setupJointCommandRPDOs(std::vector<canbus::Message>& messages,
     }
     m_rpdo_begin = pdoStartIndex;
     m_rpdo_end = pdoIndex;
+    return pdoIndex;
+}
+
+int DriverBase::setupTPDO(
+    PDOMapping mapping, vector<canbus::Message>& messages, int pdoIndex,
+    PDOCommunicationParameters const& parameters
+) {
+    auto msgs = mCANOpen.configurePDO(true, pdoIndex, parameters, mapping);
+    messages.insert(messages.end(), msgs.begin(), msgs.end());
+    mCANOpen.declareTPDOMapping(pdoIndex, mapping);
+    return pdoIndex + 1;
+}
+
+int DriverBase::setupAnalogTPDOsInternal(
+    uint32_t const mask, int objectOffset, std::vector<canbus::Message>& messages,
+    int pdoIndex, canopen_master::PDOCommunicationParameters const& parameters
+) {
+    bool first = true;
+    PDOMapping mapping;
+    for (int i = 0; i < 32; ++i) {
+        if (!(mask & (1 << i))) {
+            continue;
+        }
+
+        mapping.add<AnalogInput>(objectOffset, i + 1);
+        if (!first) {
+            pdoIndex = setupTPDO(mapping, messages, pdoIndex, parameters);
+            mapping = PDOMapping();
+        }
+
+        first = !first;
+    }
+
+    if (!first) {
+        pdoIndex = setupTPDO(mapping, messages, pdoIndex, parameters);
+    }
+
+    return pdoIndex;
+}
+
+int DriverBase::setupAnalogTPDOs(std::vector<canbus::Message>& messages,
+    int pdoIndex, canopen_master::PDOCommunicationParameters const& parameters) {
+    pdoIndex = setupAnalogTPDOsInternal(
+        m_expected_analog_inputs_mask, 0, messages,
+        pdoIndex, parameters
+    );
+    pdoIndex = setupAnalogTPDOsInternal(
+        m_expected_converted_analog_inputs_mask, 1, messages,
+        pdoIndex, parameters
+    );
     return pdoIndex;
 }
 
