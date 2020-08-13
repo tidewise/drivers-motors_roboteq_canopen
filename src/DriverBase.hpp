@@ -19,11 +19,27 @@ namespace motors_roboteq_canopen {
         int m_joint_state_sync_period;
         base::Time m_joint_state_period;
 
+
+        uint32_t m_received_analog_inputs_mask = 0;
+        uint32_t m_expected_analog_inputs_mask = 0;
+        uint32_t m_received_converted_analog_inputs_mask = 0;
+        uint32_t m_expected_converted_analog_inputs_mask = 0;
+
         int m_rpdo_begin = 0;
         int m_rpdo_end = 0;
 
         canopen_master::PDOCommunicationParameters
             getJointStateTPDOParameters();
+
+        int setupTPDO(
+            canopen_master::PDOMapping mapping, std::vector<canbus::Message>& messages,
+            int pdoIndex, canopen_master::PDOCommunicationParameters const& parameters
+        );
+
+        int setupAnalogTPDOsInternal(
+            uint32_t const mask, int objectOffset, std::vector<canbus::Message>& messages,
+            int pdoIndex, canopen_master::PDOCommunicationParameters const& parameters
+        );
 
     protected:
         void addChannel(ChannelBase* channel);
@@ -67,6 +83,16 @@ namespace motors_roboteq_canopen {
             canopen_master::PDOCommunicationParameters const& parameters
         );
 
+        /** Insert SDO messages to configure the TPDOs needed to receive analog inputs
+         *
+         * The inputs must have been configured first with @c setAnalogInputEnableInTPDO
+         * or @c setAnalogInputConvertedEnableInTPDO
+         */
+        int setupAnalogTPDOs(
+            std::vector<canbus::Message>& messages, int pdoStartIndex,
+            canopen_master::PDOCommunicationParameters const& parameters
+        );
+
         int setupStatusTPDOs(
             std::vector<canbus::Message>& messages, int pdoStartIndex,
             canopen_master::PDOCommunicationParameters const& parameters
@@ -88,6 +114,43 @@ namespace motors_roboteq_canopen {
 
         /** Get the SDO write messages that update the joint command */
         std::vector<canbus::Message> queryJointCommandDownload() const;
+
+        /** Whether we received a whole update of the analog inputs we are
+         * expecting
+         */
+        bool hasAnalogInputUpdate() const;
+
+        /** Enable or disable a given analog input to be received by TPDOs
+         */
+        void setAnalogInputEnableInTPDO(int index, bool flag);
+
+        /** Reset the state tracking needed by hasAnalogInputUpdate */
+        void resetAnalogInputTracking();
+
+        /**
+         * Get query messages to receive the current value of the given analog
+         * input
+         */
+        canbus::Message queryAnalogInput(int index) const;
+
+        /**
+         * Whether we received a whole update of the converted analog inputs we
+         * are expecting
+         */
+        bool hasConvertedAnalogInputUpdate() const;
+
+        /** Enable or disable a given analog input to be received by TPDOs
+         */
+        void setConvertedAnalogInputEnableInTPDO(int index, bool flag);
+
+        /** Reset the state tracking needed by hasConvertedAnalogInputUpdate */
+        void resetConvertedAnalogInputTracking();
+
+        /**
+         * Get query messages to receive the current value of the given analog
+         * input in converted form
+         */
+        canbus::Message queryAnalogInputConverted(int index) const;
     };
 }
 

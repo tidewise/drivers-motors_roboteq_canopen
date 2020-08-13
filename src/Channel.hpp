@@ -53,9 +53,12 @@ namespace motors_roboteq_canopen {
             UPDATED_FEEDBACK = 0x4
         };
 
-        uint8_t m_joint_state_tracking = 0;
-        uint8_t m_joint_state_mask = 0;
+        uint32_t m_joint_state_tracking = 0;
+        uint32_t m_joint_state_mask = 0;
         uint32_t getJointStateMask() const;
+
+        uint32_t m_analog_input_mask = 0;
+        uint32_t getAnalogInputMask() const;
 
     public:
         bool isIgnored() const;

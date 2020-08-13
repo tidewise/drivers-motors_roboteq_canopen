@@ -26,6 +26,9 @@ namespace motors_roboteq_canopen {
 
     CANOPEN_DEFINE_OBJECT(0x2119, 0, Time,                          std::uint32_t);
 
+    CANOPEN_DEFINE_OBJECT(0x2146, 0, AnalogInput,                   std::int16_t);
+    CANOPEN_DEFINE_OBJECT(0x2147, 0, ConvertedAnalogInput,          std::int16_t);
+
     CANOPEN_DEFINE_OBJECT(0x6040, 0, ControlWordRaw,                std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x6041, 0, StatusWordRaw,                 std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x6042, 0, TargetVelocity,                std::int16_t);
