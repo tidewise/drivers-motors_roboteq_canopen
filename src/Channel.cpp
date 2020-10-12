@@ -52,6 +52,7 @@ vector<PDOMapping> Channel::getJointStateTPDOMapping() const {
     if (m_control_mode != CONTROL_OPEN_LOOP) {
         mapping.add<Feedback>(0, m_channel);
     }
+    mapping.add<ChannelStatusFlagsRaw>(0, m_channel);
     return vector<PDOMapping> { mapping };
 }
 
