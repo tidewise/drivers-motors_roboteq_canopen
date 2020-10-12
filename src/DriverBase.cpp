@@ -116,6 +116,11 @@ ControllerStatus DriverBase::getControllerStatus() const {
     }
     status.status_flags = get<StatusFlagsRaw>();
     status.fault_flags = get<FaultFlagsRaw>();
+
+    status.channel_status_flags.resize(m_channels.size());
+    for (size_t i = 0; i < m_channels.size(); ++i) {
+        status.channel_status_flags[i] = get<ChannelStatusFlagsRaw>(0, i);
+    }
     return status;
 }
 
