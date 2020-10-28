@@ -48,8 +48,11 @@ TEST_F(DriverTest, it_queries_controller_status) {
           0x2112, 0,
           0x210F, 1,
           0x210F, 2,
+          0x2122, 1,
           0x210F, 3,
-          0x210F, 4 }
+          0x2122, 2,
+          0x210F, 4,
+          0x2122, 3 }
     );
 }
 
@@ -61,8 +64,11 @@ TEST_F(DriverTest, it_returns_controller_status) {
     can_open.set<uint16_t>(0x2112, 0, 0xabcd);
     can_open.set<int8_t>(0x210F, 1, 50);
     can_open.set<int8_t>(0x210F, 2, 100);
+    can_open.set<uint16_t>(0x2122, 1, 16);
     can_open.set<int8_t>(0x210F, 3, 120);
+    can_open.set<uint16_t>(0x2122, 2, 8);
     can_open.set<int8_t>(0x210F, 4, -20);
+    can_open.set<uint16_t>(0x2122, 3, 24);
     ControllerStatus status = driver.getControllerStatus();
     ASSERT_FLOAT_EQ(2, status.voltage_internal);
     ASSERT_FLOAT_EQ(2.5, status.voltage_battery);
@@ -71,8 +77,11 @@ TEST_F(DriverTest, it_returns_controller_status) {
     ASSERT_EQ(0xabcd, status.fault_flags);
     ASSERT_FLOAT_EQ(50, status.temperature_mcu.getCelsius());
     ASSERT_FLOAT_EQ(100, status.temperature_sensors.at(0).getCelsius());
+    ASSERT_EQ(16, status.channel_status_flags[0]);
     ASSERT_FLOAT_EQ(120, status.temperature_sensors.at(1).getCelsius());
+    ASSERT_EQ(8, status.channel_status_flags[1]);
     ASSERT_FLOAT_EQ(-20, status.temperature_sensors.at(2).getCelsius());
+    ASSERT_EQ(24, status.channel_status_flags[2]);
 }
 
 TEST_F(DriverTest, it_sets_up_joint_state_TPDOs) {
