@@ -28,12 +28,15 @@ int SerialCommandWriter::extractPacket(uint8_t const* buffer, size_t buffer_size
         return 0;
     }
 
-    char ack = buffer[expected_reply_size - 2];
-    char lf = buffer[expected_reply_size - 1];
-    if (lf != '\r' || (ack != '+' && ack != '-')) {
-        return -1;
+    char one_char_after_msg = buffer[expected_reply_size - 2];
+    char two_char_after_msg = buffer[expected_reply_size - 1];
+    if (two_char_after_msg == '\r' && (one_char_after_msg == '+' || one_char_after_msg == '-')) {
+        return expected_reply_size;
     }
-    return expected_reply_size;
+    if (one_char_after_msg == '\r' && (two_char_after_msg == '+' || two_char_after_msg == '-')) {
+        return expected_reply_size;
+    }
+    return -1;
 }
 
 SerialCommandWriter::SerialCommandWriter()
@@ -48,7 +51,7 @@ void SerialCommandWriter::setLogStream(std::ostream& stream) {
 
 void SerialCommandWriter::log(std::string const& msg) {
     if (m_log_stream) {
-        *m_log_stream << msg;
+        *m_log_stream << msg << std::flush;
     }
 }
 
@@ -71,7 +74,7 @@ void SerialCommandWriter::executeCommand(string const& command_line) {
         INTERNAL_BUFFER_SIZE
     );
 
-    if (read_buffer[length - 2] != '+') {
+    if (read_buffer[length - 2] != '+' && read_buffer[length - 1] != '+') {
         throw CommandFailed(command_line);
     }
     else {
