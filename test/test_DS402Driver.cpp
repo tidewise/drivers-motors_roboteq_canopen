@@ -130,6 +130,9 @@ TEST_F(DriverTest, it_sets_up_joint_command_RPDOs) {
 
 TEST_F(DriverTest, it_sets_up_status_TPDOs) {
     std::vector<canbus::Message> messages;
+
+    canopen_master::StateMachine can_open(NODE_ID);
+    DS402Driver driver(can_open, 2);
     driver.setupStatusTPDOs(
         messages, 3, canopen_master::PDOCommunicationParameters::Async()
     );
@@ -139,10 +142,9 @@ TEST_F(DriverTest, it_sets_up_status_TPDOs) {
     can_open.set<uint16_t>(0x210D, 3, 500);
     can_open.set<uint16_t>(0x2111, 0, 0x1234);
     can_open.set<uint16_t>(0x2112, 0, 0xabcd);
-    can_open.set<int8_t>(0x210F, 1, 50);
-    can_open.set<int8_t>(0x210F, 2, 100);
-    can_open.set<int8_t>(0x210F, 3, 120);
-    can_open.set<int8_t>(0x210F, 4, -20);
+    can_open.set<int16_t>(0x210F, 1, 50);
+    can_open.set<int16_t>(0x210F, 2, 100);
+    can_open.set<int16_t>(0x210F, 3, 120);
     ASSERT_PDO_MAPPING_MESSAGES(messages, false, 3,
         { { 0x2111, 0, 2,
             0x2112, 0, 2,
@@ -151,8 +153,7 @@ TEST_F(DriverTest, it_sets_up_status_TPDOs) {
           { 0x210D, 3, 2,
             0x210F, 1, 1,
             0x210F, 2, 1,
-            0x210F, 3, 1,
-            0x210F, 4, 1 } }
+            0x210F, 3, 1 } }
     );
 }
 
