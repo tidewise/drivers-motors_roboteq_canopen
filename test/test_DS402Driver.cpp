@@ -4,14 +4,14 @@
 
 using namespace motors_roboteq_canopen;
 
-struct DriverTest : public Helpers {
+struct DS402DriverTest : public Helpers {
     static const int NODE_ID = 2;
     static const int CHANNEL_COUNT = 3;
 
     canopen_master::StateMachine can_open;
     DS402Driver driver;
 
-    DriverTest()
+    DS402DriverTest()
         : can_open(NODE_ID)
         , driver(can_open, CHANNEL_COUNT) {
         Factors factors;
@@ -37,7 +37,7 @@ struct DriverTest : public Helpers {
     }
 };
 
-TEST_F(DriverTest, it_queries_controller_status) {
+TEST_F(DS402DriverTest, it_queries_controller_status) {
     auto queries = driver.queryControllerStatus();
     ASSERT_QUERIES_SDO_UPLOAD(
         queries,
@@ -56,7 +56,7 @@ TEST_F(DriverTest, it_queries_controller_status) {
     );
 }
 
-TEST_F(DriverTest, it_returns_controller_status) {
+TEST_F(DS402DriverTest, it_returns_controller_status) {
     can_open.set<uint16_t>(0x210D, 1, 20);
     can_open.set<uint16_t>(0x210D, 2, 25);
     can_open.set<uint16_t>(0x210D, 3, 500);
@@ -84,7 +84,7 @@ TEST_F(DriverTest, it_returns_controller_status) {
     ASSERT_EQ(24, status.channel_status_flags[2]);
 }
 
-TEST_F(DriverTest, it_sets_up_joint_state_TPDOs) {
+TEST_F(DS402DriverTest, it_sets_up_joint_state_TPDOs) {
     driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
     driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
     driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
@@ -108,7 +108,7 @@ TEST_F(DriverTest, it_sets_up_joint_state_TPDOs) {
     );
 }
 
-TEST_F(DriverTest, it_sets_up_joint_command_RPDOs) {
+TEST_F(DS402DriverTest, it_sets_up_joint_command_RPDOs) {
     driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
     driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
     driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
@@ -128,7 +128,7 @@ TEST_F(DriverTest, it_sets_up_joint_command_RPDOs) {
     );
 }
 
-TEST_F(DriverTest, it_sets_up_status_TPDOs) {
+TEST_F(DS402DriverTest, it_sets_up_status_TPDOs) {
     std::vector<canbus::Message> messages;
 
     canopen_master::StateMachine can_open(NODE_ID);
@@ -157,7 +157,7 @@ TEST_F(DriverTest, it_sets_up_status_TPDOs) {
     );
 }
 
-TEST_F(DriverTest, it_updates_the_channels_joint_state_tracking_on_process) {
+TEST_F(DS402DriverTest, it_updates_the_channels_joint_state_tracking_on_process) {
     driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_VELOCITY_PROFILE);
     driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
     driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
@@ -179,7 +179,7 @@ base::samples::Joints getJointCommand() {
     return cmd;
 }
 
-TEST_F(DriverTest, it_sets_the_joint_commands_on_all_joints) {
+TEST_F(DS402DriverTest, it_sets_the_joint_commands_on_all_joints) {
     driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
     driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
     driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
@@ -192,7 +192,7 @@ TEST_F(DriverTest, it_sets_the_joint_commands_on_all_joints) {
     ASSERT_EQ(1, driver.getChannel(2).getJointCommand().effort);
 }
 
-TEST_F(DriverTest, it_raises_if_there_are_too_few_commands) {
+TEST_F(DS402DriverTest, it_raises_if_there_are_too_few_commands) {
     driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
     driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
     driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
@@ -202,7 +202,7 @@ TEST_F(DriverTest, it_raises_if_there_are_too_few_commands) {
     ASSERT_THROW(driver.setJointCommand(cmd), std::invalid_argument);
 }
 
-TEST_F(DriverTest, it_raises_if_there_are_too_many_commands) {
+TEST_F(DS402DriverTest, it_raises_if_there_are_too_many_commands) {
     driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
     driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
     driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_TORQUE_PROFILE);
@@ -212,7 +212,7 @@ TEST_F(DriverTest, it_raises_if_there_are_too_many_commands) {
     ASSERT_THROW(driver.setJointCommand(cmd), std::invalid_argument);
 }
 
-TEST_F(DriverTest, it_skips_the_joints_that_are_ignored) {
+TEST_F(DS402DriverTest, it_skips_the_joints_that_are_ignored) {
     driver.getChannel(0).setOperationMode(DS402_OPERATION_MODE_VELOCITY);
     driver.getChannel(1).setOperationMode(DS402_OPERATION_MODE_NONE);
     driver.getChannel(2).setOperationMode(DS402_OPERATION_MODE_RELATIVE_POSITION);
