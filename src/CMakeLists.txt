@@ -6,7 +6,11 @@ rock_library(motors_roboteq_canopen
             ChannelBase.hpp Channel.hpp DS402Channel.hpp
             Factors.hpp Objects.hpp
             ControllerStatus.hpp Exceptions.hpp
-    DEPS_PKGCONFIG base-types canopen_master)
+    DEPS_PKGCONFIG
+        base-types
+        canopen_master
+        raw_io
+)
 
 rock_executable(motors_roboteq_canopen_cfg MainCfg.cpp
     DEPS motors_roboteq_canopen)

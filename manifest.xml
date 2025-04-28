@@ -16,4 +16,5 @@
   -->
   <depend package="drivers/canbus" />
   <depend package="drivers/canopen_master" />
+  <depend package="drivers/raw_io" />
 </package>

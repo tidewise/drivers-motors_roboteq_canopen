@@ -6,6 +6,8 @@
 namespace motors_roboteq_canopen {
     CANOPEN_DEFINE_OBJECT(0x2000, 1, SetCommand,                    std::int32_t);
     CANOPEN_DEFINE_OBJECT(0x2002, 1, SetSpeedTarget,                std::int16_t);
+    CANOPEN_DEFINE_OBJECT(0x2009, 0, ActivateDigitalOutput,         std::uint8_t);
+    CANOPEN_DEFINE_OBJECT(0x200A, 0, ResetDigitalOutput,            std::uint8_t);
     CANOPEN_DEFINE_OBJECT(0x200C, 0, EmergencyShutdown,             std::uint8_t);
     CANOPEN_DEFINE_OBJECT(0x200D, 0, ReleaseShutdown,               std::uint8_t);
     CANOPEN_DEFINE_OBJECT(0x200E, 0, MotorStop,                     std::uint8_t);
@@ -22,6 +24,7 @@ namespace motors_roboteq_canopen {
     CANOPEN_DEFINE_OBJECT(0x2110, 1, Feedback,                      std::int16_t);
     CANOPEN_DEFINE_OBJECT(0x2111, 0, StatusFlagsRaw,                std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x2112, 0, FaultFlagsRaw,                 std::uint16_t);
+    CANOPEN_DEFINE_OBJECT(0x2113, 0, ReadAllDigitalOutput,          std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x2114, 1, ClosedLoopError,               std::int32_t);
 
     CANOPEN_DEFINE_OBJECT(0x2119, 0, Time,                          std::uint32_t);
