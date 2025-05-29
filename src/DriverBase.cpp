@@ -41,12 +41,19 @@ canopen_master::StateMachine::Update DriverBase::process(canbus::Message const& 
         else if (single_update.first == ConvertedAnalogInput::OBJECT_ID) {
             m_received_converted_analog_inputs_mask |= 1 << (single_update.second - 1);
         }
+        else if (single_update.first == EncoderCounter::OBJECT_ID) {
+            m_received_encoder_counter_mask |= 1 << (single_update.second - 1);
+        }
     }
     return update;
 }
 
 bool DriverBase::hasAnalogInputUpdate() const {
     return m_expected_analog_inputs_mask == m_received_analog_inputs_mask;
+}
+
+bool DriverBase::hasEncoderCounterUpdate() const {
+    return m_expected_encoder_counter_mask == m_received_encoder_counter_mask;
 }
 
 void DriverBase::setAnalogInputEnableInTPDO(int index, bool flag) {
@@ -58,8 +65,21 @@ void DriverBase::setAnalogInputEnableInTPDO(int index, bool flag) {
     }
 }
 
+void DriverBase::setEncoderCounterEnableInTPDO(int index, bool flag) {
+    if (flag) {
+        m_expected_encoder_counter_mask |= 1 << index;
+    }
+    else {
+        m_expected_encoder_counter_mask &= ~(1 << index);
+    }
+}
+
 void DriverBase::resetAnalogInputTracking() {
     m_received_analog_inputs_mask = 0;
+}
+
+void DriverBase::resetEncoderCounterTracking() {
+    m_received_encoder_counter_mask = 0;
 }
 
 bool DriverBase::hasConvertedAnalogInputUpdate() const {
@@ -82,6 +102,10 @@ void DriverBase::resetConvertedAnalogInputTracking() {
 
 canbus::Message DriverBase::queryAnalogInput(int index) const {
     return queryUpload<AnalogInput>(0, index + 1);
+}
+
+canbus::Message DriverBase::queryEncoderCounter(int index) const {
+    return queryUpload<EncoderCounter>(0, index + 1);
 }
 
 canbus::Message DriverBase::queryAnalogInputConverted(int index) const {
@@ -212,6 +236,31 @@ int DriverBase::setupAnalogTPDOs(std::vector<canbus::Message>& messages,
         m_expected_converted_analog_inputs_mask, 1, messages,
         pdoIndex, parameters
     );
+    return pdoIndex;
+}
+
+int DriverBase::setupEncoderTPDOs(std::vector<canbus::Message>& messages,
+    int pdoIndex, canopen_master::PDOCommunicationParameters const& parameters) {
+    bool first = true;
+    PDOMapping mapping;
+    for (int i = 0; i < 32; ++i) {
+        if (!(m_expected_encoder_counter_mask & (1 << i))) {
+            continue;
+        }
+
+        mapping.add<EncoderCounter>(0, i + 1);
+        if (!first) {
+            pdoIndex = setupTPDO(mapping, messages, pdoIndex, parameters);
+            mapping = PDOMapping();
+        }
+
+        first = !first;
+    }
+
+    if (!first) {
+        pdoIndex = setupTPDO(mapping, messages, pdoIndex, parameters);
+    }
+
     return pdoIndex;
 }
 

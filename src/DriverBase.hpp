@@ -20,6 +20,9 @@ namespace motors_roboteq_canopen {
         base::Time m_joint_state_period;
 
 
+        uint32_t m_received_encoder_counter_mask = 0;
+        uint32_t m_expected_encoder_counter_mask = 0;
+
         uint32_t m_received_analog_inputs_mask = 0;
         uint32_t m_expected_analog_inputs_mask = 0;
         uint32_t m_received_converted_analog_inputs_mask = 0;
@@ -93,6 +96,11 @@ namespace motors_roboteq_canopen {
             canopen_master::PDOCommunicationParameters const& parameters
         );
 
+        int setupEncoderTPDOs(
+            std::vector<canbus::Message>& messages, int pdoStartIndex,
+            canopen_master::PDOCommunicationParameters const& parameters
+        );
+
         int setupStatusTPDOs(
             std::vector<canbus::Message>& messages, int pdoStartIndex,
             canopen_master::PDOCommunicationParameters const& parameters
@@ -119,19 +127,23 @@ namespace motors_roboteq_canopen {
          * expecting
          */
         bool hasAnalogInputUpdate() const;
+        bool hasEncoderCounterUpdate() const;
 
         /** Enable or disable a given analog input to be received by TPDOs
          */
         void setAnalogInputEnableInTPDO(int index, bool flag);
+        void setEncoderCounterEnableInTPDO(int index, bool flag);
 
         /** Reset the state tracking needed by hasAnalogInputUpdate */
         void resetAnalogInputTracking();
+        void resetEncoderCounterTracking();
 
         /**
          * Get query messages to receive the current value of the given analog
          * input
          */
         canbus::Message queryAnalogInput(int index) const;
+        canbus::Message queryEncoderCounter(int index) const;
 
         /**
          * Whether we received a whole update of the converted analog inputs we
