@@ -2,6 +2,7 @@
 #define MOTORS_ROBOTEQ_CANOPEN_FACTORS_HPP
 
 #include <cstdint>
+#include <motors_roboteq_canopen/JointStateSources.hpp>
 
 namespace motors_roboteq_canopen {
     /** Conversion factors between the internal units and SI units
@@ -39,6 +40,11 @@ namespace motors_roboteq_canopen {
          */
         double max_current = 1000;
 
+        /** Factor to multiply the absolute encoder position value */
+        float encoder_position_factor = 1.0;
+
+        float absoluteEncoderPositionToSI(int32_t position) const;
+        float positionToSI(int32_t position, JointStatePositionSources source) const;
         float relativeSpeedToSI(int32_t position) const;
         float relativePositionToSI(int32_t position) const;
         float pwmToFloat(int16_t value) const;

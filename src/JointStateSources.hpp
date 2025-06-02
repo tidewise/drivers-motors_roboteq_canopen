@@ -4,7 +4,7 @@
 #include <cstdint>
 
 namespace motors_roboteq_canopen {
-    /**  */
+    /** Sources for the joint position state */
     enum JointStatePositionSources {
         /**  */
         JOINT_STATE_POSITION_SOURCE_NONE,

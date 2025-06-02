@@ -60,8 +60,6 @@ namespace motors_roboteq_canopen {
         uint32_t m_analog_input_mask = 0;
         uint32_t getAnalogInputMask() const;
 
-        int32_t getJointStatePositionFeedback() const;
-
     public:
         bool isIgnored() const;
 

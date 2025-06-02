@@ -70,18 +70,6 @@ vector<canbus::Message> Channel::queryJointState() const {
     return messages;
 }
 
-int32_t Channel::getJointStatePositionFeedback() const{
-    switch(m_joint_state_position_source) {
-        case JOINT_STATE_POSITION_SOURCE_NONE:
-        case JOINT_STATE_POSITION_SOURCE_AUTO:
-            return get<Feedback>();
-        case JOINT_STATE_POSITION_SOURCE_ENCODER:
-            return get<EncoderCounter>();
-        default:
-            throw std::invalid_argument("unexpected joint state position source");
-    }
-}
-
 JointState Channel::getJointState() const {
     JointState state;
     if (isIgnored()) {
@@ -93,8 +81,12 @@ JointState Channel::getJointState() const {
 
     switch (m_control_mode) {
         case CONTROL_NONE:
-        case CONTROL_OPEN_LOOP:
+        case CONTROL_OPEN_LOOP: {
+            int32_t feedback = get<EncoderCounter>();
+            state.position = m_factors.positionToSI(feedback,
+                                                    m_joint_state_position_source);
             return state;
+        }
         case CONTROL_SPEED:
         case CONTROL_SPEED_POSITION: {
             int32_t feedback = get<Feedback>();
@@ -103,8 +95,9 @@ JointState Channel::getJointState() const {
         }
         case CONTROL_PROFILED_POSITION:
         case CONTROL_POSITION: {
-            int32_t feedback = getJointStatePositionFeedback();
-            state.position = m_factors.relativePositionToSI(feedback);
+            int32_t feedback = get<Feedback>();
+            state.position = m_factors.positionToSI(feedback,
+                                                    m_joint_state_position_source);
             return state;
         }
         case CONTROL_TORQUE:
