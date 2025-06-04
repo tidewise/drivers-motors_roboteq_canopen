@@ -4,7 +4,7 @@ rock_library(motors_roboteq_canopen
             Factors.cpp Objects.cpp SerialCommandWriter.cpp
     HEADERS DriverBase.hpp Driver.hpp DS402Driver.hpp
             ChannelBase.hpp Channel.hpp DS402Channel.hpp
-            Factors.hpp Objects.hpp JointStateSources.hpp
+            Factors.hpp Objects.hpp JointStatePositionSources.hpp
             ControllerStatus.hpp Exceptions.hpp
     DEPS_PKGCONFIG
         base-types
