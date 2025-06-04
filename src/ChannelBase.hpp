@@ -8,7 +8,6 @@
 #include <canopen_master/StateMachine.hpp>
 #include <motors_roboteq_canopen/Objects.hpp>
 #include <motors_roboteq_canopen/Factors.hpp>
-#include <motors_roboteq_canopen/JointStateSources.hpp>
 #include <motors_roboteq_canopen/Exceptions.hpp>
 
 namespace motors_roboteq_canopen {
@@ -20,7 +19,6 @@ namespace motors_roboteq_canopen {
     class ChannelBase {
     protected:
         Factors m_factors;
-        JointStatePositionSources m_joint_state_position_source;
 
     public:
         virtual ~ChannelBase();

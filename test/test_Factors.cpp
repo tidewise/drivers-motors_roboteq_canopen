@@ -59,15 +59,15 @@ TEST_F(FactorsTest, it_returns_SI_position_max_at_relative_position_1000) {
 
 TEST_F(FactorsTest,
     it_returns_the_SI_center_position_for_absolute_encoder_at_position_zero) {
-    ASSERT_FLOAT_EQ(0, factors.absoluteEncoderPositionToSI(0));
+    ASSERT_FLOAT_EQ(0, factors.encoderToSI(0));
 }
 
 TEST_F(FactorsTest, it_returns_the_SI_position_for_absolute_encoder_minus_1000) {
-    ASSERT_FLOAT_EQ(-500, factors.absoluteEncoderPositionToSI(-1000));
+    ASSERT_FLOAT_EQ(-0.5, factors.encoderToSI(-1));
 }
 
 TEST_F(FactorsTest, it_returns_the_SI_position_for_absolute_encoder_1000) {
-    ASSERT_FLOAT_EQ(500, factors.absoluteEncoderPositionToSI(1000));
+    ASSERT_FLOAT_EQ(0.5, factors.encoderToSI(1));
 }
 
 TEST_F(FactorsTest, it_returns_position_zero_at_the_SI_center_of_the_min_max_range) {
@@ -88,24 +88,4 @@ TEST_F(FactorsTest, it_returns_position_1000_at_SI_position_max) {
 
 TEST_F(FactorsTest, it_clamps_the_relative_position_at_plus_1000) {
     ASSERT_FLOAT_EQ(1000, factors.relativePositionFromSI(85));
-}
-
-TEST_F(FactorsTest, it_returns_the_SI_position_for_no_joint_state_position_source) {
-    ASSERT_FLOAT_EQ(84,
-        factors.positionToSI(1000,
-            JointStatePositionSources::JOINT_STATE_POSITION_SOURCE_NONE));
-}
-
-TEST_F(FactorsTest,
-    it_returns_the_SI_position_for_the_auto_joint_state_position_source) {
-    ASSERT_FLOAT_EQ(84,
-        factors.positionToSI(1000,
-            JointStatePositionSources::JOINT_STATE_POSITION_SOURCE_AUTO));
-}
-
-TEST_F(FactorsTest,
-    it_returns_the_SI_position_for_the_encoder_joint_state_position_source) {
-    ASSERT_FLOAT_EQ(500,
-        factors.positionToSI(1000,
-            JointStatePositionSources::JOINT_STATE_POSITION_SOURCE_ENCODER));
 }

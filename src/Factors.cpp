@@ -27,20 +27,7 @@ static int32_t fromSI(float si, float max, float min) {
     return Factors::clamp1000(std::round(v));
 }
 
-float Factors::positionToSI(int32_t position, JointStatePositionSources source) const
-{
-    switch (source) {
-        case JOINT_STATE_POSITION_SOURCE_NONE:
-        case JOINT_STATE_POSITION_SOURCE_AUTO:
-            return relativePositionToSI(position);
-        case JOINT_STATE_POSITION_SOURCE_ENCODER:
-            return absoluteEncoderPositionToSI(position);
-        default:
-            return base::unknown<float>();
-    }
-}
-
-float Factors::absoluteEncoderPositionToSI(int32_t position) const
+float Factors::encoderToSI(int32_t position) const
 {
     return position * encoder_position_factor;
 }
