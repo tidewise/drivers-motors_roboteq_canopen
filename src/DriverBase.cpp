@@ -56,8 +56,8 @@ bool DriverBase::hasEncoderCounterUpdate() const {
     return m_expected_encoder_counter_mask == m_received_encoder_counter_mask;
 }
 
-void DriverBase::setAnalogInputEnableInTPDO(int index, bool flag) {
-    if (flag) {
+void DriverBase::setAnalogInputEnableInTPDO(int index, bool enable) {
+    if (enable) {
         m_expected_analog_inputs_mask |= 1 << index;
     }
     else {
@@ -65,8 +65,8 @@ void DriverBase::setAnalogInputEnableInTPDO(int index, bool flag) {
     }
 }
 
-void DriverBase::setEncoderCounterEnableInTPDO(int index, bool flag) {
-    if (flag) {
+void DriverBase::setEncoderCounterEnableInTPDO(int index, bool enable) {
+    if (enable) {
         m_expected_encoder_counter_mask |= 1 << index;
     }
     else {
@@ -87,8 +87,8 @@ bool DriverBase::hasConvertedAnalogInputUpdate() const {
            m_received_converted_analog_inputs_mask;
 }
 
-void DriverBase::setConvertedAnalogInputEnableInTPDO(int index, bool flag) {
-    if (flag) {
+void DriverBase::setConvertedAnalogInputEnableInTPDO(int index, bool enable) {
+    if (enable) {
         m_expected_converted_analog_inputs_mask |= 1 << index;
     }
     else {
