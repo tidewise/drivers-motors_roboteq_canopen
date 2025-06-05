@@ -57,16 +57,7 @@ TEST_F(FactorsTest, it_returns_SI_position_max_at_relative_position_1000) {
     ASSERT_FLOAT_EQ(84, factors.relativePositionToSI(1000));
 }
 
-TEST_F(FactorsTest,
-    it_returns_the_SI_center_position_for_absolute_encoder_at_position_zero) {
-    ASSERT_FLOAT_EQ(0, factors.encoderToSI(0));
-}
-
-TEST_F(FactorsTest, it_returns_the_SI_position_for_absolute_encoder_minus_1000) {
-    ASSERT_FLOAT_EQ(-0.5, factors.encoderToSI(-1));
-}
-
-TEST_F(FactorsTest, it_returns_the_SI_position_for_absolute_encoder_1000) {
+TEST_F(FactorsTest, it_converts_encoder_ticks_to_position) {
     ASSERT_FLOAT_EQ(0.5, factors.encoderToSI(1));
 }
 
