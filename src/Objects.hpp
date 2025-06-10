@@ -15,13 +15,14 @@ namespace motors_roboteq_canopen {
     CANOPEN_DEFINE_OBJECT(0x2100, 1, MotorAmps,                     std::int16_t);
     CANOPEN_DEFINE_OBJECT(0x2102, 1, AppliedPowerLevel,             std::int16_t);
     CANOPEN_DEFINE_OBJECT(0x210C, 1, BatteryAmps,                   std::int16_t);
+    CANOPEN_DEFINE_OBJECT(0x2104, 1, EncoderCounter,                std::int32_t);
     CANOPEN_DEFINE_OBJECT(0x210D, 1, VoltageInternal,               std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x210D, 2, VoltageBattery,                std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x210D, 3, Voltage5V,                     std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x210F, 1, TemperatureMCU,                std::int16_t);
     CANOPEN_DEFINE_OBJECT(0x210F, 2, TemperatureSensor0,            std::int16_t);
 
-    CANOPEN_DEFINE_OBJECT(0x2110, 1, Feedback,                      std::int16_t);
+    CANOPEN_DEFINE_OBJECT(0x2110, 1, Feedback,                      std::int32_t);
     CANOPEN_DEFINE_OBJECT(0x2111, 0, StatusFlagsRaw,                std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x2112, 0, FaultFlagsRaw,                 std::uint16_t);
     CANOPEN_DEFINE_OBJECT(0x2113, 0, ReadAllDigitalOutput,          std::uint16_t);

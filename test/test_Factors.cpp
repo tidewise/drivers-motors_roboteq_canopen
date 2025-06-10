@@ -10,6 +10,7 @@ struct FactorsTest : public ::testing::Test {
         factors.speed_max = 42;
         factors.position_min = -100;
         factors.position_max = 84;
+        factors.encoder_position_factor = 0.5;
     }
 };
 
@@ -54,6 +55,10 @@ TEST_F(FactorsTest, it_returns_SI_position_min_at_relative_position_minus_1000) 
 
 TEST_F(FactorsTest, it_returns_SI_position_max_at_relative_position_1000) {
     ASSERT_FLOAT_EQ(84, factors.relativePositionToSI(1000));
+}
+
+TEST_F(FactorsTest, it_converts_encoder_ticks_to_position) {
+    ASSERT_FLOAT_EQ(0.5, factors.encoderToSI(1));
 }
 
 TEST_F(FactorsTest, it_returns_position_zero_at_the_SI_center_of_the_min_max_range) {

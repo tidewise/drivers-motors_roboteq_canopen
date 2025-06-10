@@ -30,6 +30,9 @@ bool Channel::updateJointStateTracking(canopen_master::StateMachine::Update cons
     if (hasUpdatedObject<Feedback>(update)) {
         m_joint_state_tracking |= UPDATED_FEEDBACK;
     }
+    if (hasUpdatedObject<EncoderCounter>(update)) {
+        m_joint_state_tracking |= UPDATED_ENCODER;
+    }
     return hasJointStateUpdate();
 }
 
@@ -46,17 +49,71 @@ vector<PDOMapping> Channel::getJointStateTPDOMapping() const {
         return vector<PDOMapping>();
     }
 
-    PDOMapping mapping;
-    mapping.add<MotorAmps>(0, m_channel);
-    mapping.add<AppliedPowerLevel>(0, m_channel);
-    if (m_control_mode != CONTROL_OPEN_LOOP) {
-        mapping.add<Feedback>(0, m_channel);
+    vector<PDOMapping> mappings;
+
+    PDOMapping mapping0;
+    mapping0.add<MotorAmps>(0, m_channel);
+    mapping0.add<AppliedPowerLevel>(0, m_channel);
+    mapping0.add<ChannelStatusFlagsRaw>(0, m_channel);
+    mappings.push_back(mapping0);
+
+    PDOMapping mapping1;
+    if (jointStateNeedsFeedback()) {
+        mapping1.add<Feedback>(0, m_channel);
     }
-    mapping.add<ChannelStatusFlagsRaw>(0, m_channel);
-    return vector<PDOMapping> { mapping };
+    if (jointStateNeedsEncoder()) {
+        mapping1.add<EncoderCounter>(0, m_channel);
+    }
+    if (!mapping1.empty()) {
+        mappings.push_back(mapping1);
+    }
+
+    return mappings;
 }
 
-vector<canbus::Message> Channel::queryJointState() const {
+bool Channel::jointStateNeedsFeedback() const
+{
+    return (getSpeedObject() == SPEED_OBJECT_FEEDBACK ||
+            getPositionObject() == POSITION_OBJECT_FEEDBACK);
+}
+
+bool Channel::jointStateNeedsEncoder() const
+{
+    return (getPositionObject() == POSITION_OBJECT_ENCODER);
+}
+
+Channel::SpeedObject Channel::getSpeedObject() const
+{
+    switch (m_control_mode) {
+        case CONTROL_SPEED:
+        case CONTROL_SPEED_POSITION:
+            return SPEED_OBJECT_FEEDBACK;
+        default:
+            return SPEED_OBJECT_NONE;
+    }
+}
+
+Channel::PositionObject Channel::getPositionObject() const
+{
+    switch (m_joint_state_position_source) {
+        case JOINT_STATE_POSITION_SOURCE_NONE:
+            return POSITION_OBJECT_NONE;
+        case JOINT_STATE_POSITION_SOURCE_ENCODER:
+            return POSITION_OBJECT_ENCODER;
+        case JOINT_STATE_POSITION_SOURCE_AUTO:
+            if (m_control_mode == CONTROL_POSITION ||
+                m_control_mode == CONTROL_PROFILED_POSITION) {
+                return POSITION_OBJECT_FEEDBACK;
+            }
+            return POSITION_OBJECT_NONE;
+        default:
+            throw std::invalid_argument(
+                "joint state position source unsupported by getPositionObject");
+    }
+}
+
+vector<canbus::Message> Channel::queryJointState() const
+{
     vector<canbus::Message> messages;
     if (isIgnored()) {
         return messages;
@@ -64,8 +121,12 @@ vector<canbus::Message> Channel::queryJointState() const {
 
     messages.push_back(queryUpload<MotorAmps>());
     messages.push_back(queryUpload<AppliedPowerLevel>());
-    if (m_control_mode != CONTROL_OPEN_LOOP) {
+
+    if (jointStateNeedsFeedback()) {
         messages.push_back(queryUpload<Feedback>());
+    }
+    if (jointStateNeedsEncoder()) {
+        messages.push_back(queryUpload<EncoderCounter>());
     }
     return messages;
 }
@@ -79,27 +140,20 @@ JointState Channel::getJointState() const {
     state.effort = m_factors.currentToTorqueSI(get<MotorAmps>());
     state.raw = m_factors.pwmToFloat(get<AppliedPowerLevel>());
 
-    switch (m_control_mode) {
-        case CONTROL_NONE:
-        case CONTROL_OPEN_LOOP:
-            return state;
-        case CONTROL_SPEED:
-        case CONTROL_SPEED_POSITION: {
-            int32_t feedback = get<Feedback>();
-            state.speed = m_factors.relativeSpeedToSI(feedback);
-            return state;
-        }
-        case CONTROL_PROFILED_POSITION:
-        case CONTROL_POSITION: {
-            int32_t feedback = get<Feedback>();
-            state.position = m_factors.relativePositionToSI(feedback);
-            return state;
-        }
-        case CONTROL_TORQUE:
-            return state;
-        default:
-            throw std::invalid_argument("unexpected mode");
+    auto position_object = getPositionObject();
+    if (position_object == POSITION_OBJECT_FEEDBACK) {
+        state.position = m_factors.relativePositionToSI(get<Feedback>());
     }
+    else if (position_object == POSITION_OBJECT_ENCODER) {
+        state.position = m_factors.encoderToSI(get<EncoderCounter>());
+    }
+
+    auto speed_object = getSpeedObject();
+    if (speed_object == SPEED_OBJECT_FEEDBACK) {
+        state.speed = m_factors.relativeSpeedToSI(get<Feedback>());
+    }
+
+    return state;
 }
 
 uint32_t Channel::getJointStateMask() const {
@@ -109,13 +163,14 @@ uint32_t Channel::getJointStateMask() const {
 
     uint32_t mask = UPDATED_POWER_LEVEL | UPDATED_MOTOR_AMPS;
 
-    switch (m_control_mode) {
-        case CONTROL_NONE:
-        case CONTROL_OPEN_LOOP:
-            return mask;
-        default:
-            return mask | UPDATED_FEEDBACK;
+    if (jointStateNeedsFeedback()) {
+        mask |= UPDATED_FEEDBACK;
     }
+    if (jointStateNeedsEncoder()) {
+        mask |= UPDATED_ENCODER;
+    }
+
+    return mask;
 }
 
 void Channel::setControlMode(ControlModes mode) {
@@ -229,5 +284,11 @@ vector<canbus::Message> Channel::queryJointCommandDownload() const {
         return vector<canbus::Message>();
     }
 
-    return vector<canbus::Message> { queryDownload<SetCommand>() };
+    return vector<canbus::Message>{queryDownload<SetCommand>()};
+}
+
+void Channel::setJointStatePositionSource(JointStatePositionSources source) {
+    m_joint_state_position_source = source;
+    m_joint_state_tracking = 0;
+    m_joint_state_mask = getJointStateMask();
 }
