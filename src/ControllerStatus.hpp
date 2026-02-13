@@ -2,6 +2,7 @@
 #define MOTORS_ROBOTEQ_CANOPEN_CONTROLLERSTATUS_HPP
 
 #include <vector>
+#include <cstdint>
 
 #include <base/Float.hpp>
 #include <base/Temperature.hpp>
@@ -54,14 +55,14 @@ namespace motors_roboteq_canopen {
 
         /** @meta bitfield /motors_roboteq_canopen/StatusFlags
          */
-        uint16_t status_flags = 0xFFFF;
+        std::uint16_t status_flags = 0xFFFF;
 
         /** @meta bitfield /motors_roboteq_canopen/FaultFlags
          */
-        uint16_t fault_flags = 0xFFFF;
+        std::uint16_t fault_flags = 0xFFFF;
 
         /** @meta bitfields /motors_roboteq_canopen/ChannelStatusFlags */
-        std::vector<uint16_t> channel_status_flags;
+        std::vector<std::uint16_t> channel_status_flags;
     };
 }
 
